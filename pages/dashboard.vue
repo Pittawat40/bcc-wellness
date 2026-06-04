@@ -11,6 +11,7 @@
       <AdminSidebar
         v-model="sidebarOpen"
         :current-page="currentPage"
+        :has-new-appointment="hasNewAppointment"
         @navigate="showPage"
         @logout="doLogout"
       />
@@ -89,7 +90,9 @@
 
           <AdminPageAppointments
             v-else-if="currentPage === 'appointments'"
+            ref="adminPageAppointmentsRef"
             :items="appointments"
+            :latestAppointments="latestAppointments"
             :total="appointmentTotal"
             :loading="loading"
             @update-status="updateAppointmentStatus"
@@ -271,10 +274,20 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 
 useSeoMeta({ title: "BCC IVF Wellness – Admin" });
 definePageMeta({ layout: "admin" });
+
+const {
+  hasNew: hasNewAppointment,
+  latestAppointments,
+  startPolling,
+  stopPolling,
+  setOnAppointmentPage,
+} = useAppointmentNotify({
+  onNewAppointment: () => loadAppointments(),
+});
 
 const api = useAdminApi();
 const router = useRouter();
@@ -294,9 +307,12 @@ onMounted(() => {
     .then((d) => {
       adminUsername.value = d.username;
       showPage("dashboard");
+      startPolling(30000);
     })
     .catch(() => doLogout());
 });
+
+onUnmounted(() => stopPolling());
 
 function doLogout() {
   api.clearToken();
@@ -468,6 +484,7 @@ const reviewFormRef = ref<any>();
 const doctorFormRef = ref<any>();
 const faqFormRef = ref<any>();
 const passwordPageRef = ref<any>();
+const adminPageAppointmentsRef = ref<any>();
 
 watch(
   [
@@ -479,7 +496,7 @@ watch(
   ],
   () => {
     if (modal.error) {
-      modal.error = ""; // เคลียร์ข้อความแจ้งเตือนทันทีเมื่อแอดมินเริ่มขยับพิมพ์หรือแก้ไขข้อมูล
+      modal.error = "";
     }
   },
   { deep: true },
@@ -487,6 +504,7 @@ watch(
 
 // ── Navigation
 async function showPage(page: string) {
+  setOnAppointmentPage(page === "appointments");
   if (page === "password") {
     pwMsg.value = "";
     passwordDialog.open = true;
@@ -896,8 +914,9 @@ async function onDeleteCategory(id: number | string) {
 // ── Appointment handlers
 async function updateAppointmentStatus(id: number, status: string) {
   try {
+    adminPageAppointmentsRef.value.filter = status;
     await api.updateAppointment(id, { status });
-    await loadAppointments();
+    await loadAppointments({ status });
     showSuccess("อัปเดตสถานะสำเร็จ", "สถานะการนัดหมายได้รับการปรับปรุงแล้ว");
   } catch (e: any) {
     showAlert("เกิดข้อผิดพลาด", e.message);

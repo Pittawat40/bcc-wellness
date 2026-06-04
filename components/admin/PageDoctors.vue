@@ -46,7 +46,7 @@
           </thead>
           <tbody>
             <tr v-if="!items.length">
-              <td colspan="5" class="empty-state">
+              <td colspan="6" class="empty-state">
                 <div class="empty-state-inner">
                   <i class="bi bi-person-badge empty-icon"></i>
                   <span>ไม่พบข้อมูลแพทย์</span>

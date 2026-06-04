@@ -59,7 +59,7 @@
           </thead>
           <tbody>
             <tr v-if="!items.length">
-              <td colspan="6" class="empty-state">
+              <td colspan="7" class="empty-state">
                 <div class="empty-state-inner">
                   <i class="bi bi-calendar2-x empty-icon"></i>
                   <span>ไม่พบรายการนัดหมายที่ตรงเงื่อนไข</span>
@@ -74,7 +74,18 @@
                 }}</span>
               </td>
               <td>
-                <div class="cell-primary">{{ a.name }}</div>
+                <div class="cell-primary">
+                  {{ a.name }}
+                  <span
+                    v-if="
+                      latestAppointments &&
+                      latestAppointments.some((latest) => latest.id === a.id)
+                    "
+                    class="inline-flex items-center ml-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-600 animate-pulse"
+                  >
+                    ใหม่
+                  </span>
+                </div>
                 <div class="cell-secondary-phone">
                   <i class="bi bi-telephone text-neutral-400 mr-1"></i
                   >{{ formatPhone(a.phone) }}
@@ -116,6 +127,13 @@
                     title="ดูรายละเอียด"
                   >
                     <i class="bi bi-eye"></i>
+                  </button>
+                  <button
+                    class="btn-icon btn-icon-danger"
+                    @click="emit('delete', a.id)"
+                    title="ลบ"
+                  >
+                    <i class="bi bi-trash3"></i>
                   </button>
                 </div>
               </td>
@@ -233,7 +251,13 @@ import { ref, computed, watch } from "vue";
 
 const PAGE_SIZE = 10;
 
-const props = defineProps<{ items: any[]; total: number; loading: boolean }>();
+const props = defineProps<{
+  items: any[];
+  latestAppointments: any[];
+  total: number;
+  loading: boolean;
+}>();
+
 const emit = defineEmits<{
   (e: "updateStatus", id: number, status: string): void;
   (e: "saveNote", id: number, note: string): void;
@@ -250,6 +274,10 @@ const viewing = ref<any>(null);
 const noteEdit = ref("");
 const page = ref(1);
 let searchTimer: any;
+
+defineExpose({
+  filter,
+});
 
 watch(viewing, (v) => {
   noteEdit.value = v?.note || "";

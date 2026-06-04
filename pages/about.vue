@@ -148,7 +148,7 @@
       </div>
     </section>
 
-    <section class="py-8 md:py-14 bg-neutral-100 relative overflow-hidden">
+    <section class="py-8 md:py-10 bg-neutral-100 relative overflow-hidden">
       <div class="container-wide p-0 md:p-4 relative z-10">
         <div
           class="text-center max-w-xl mx-auto mb-14 scroll-reveal item-reveal-up"
