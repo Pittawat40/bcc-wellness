@@ -29,10 +29,11 @@
         >
         <input
           class="form-input w-full"
-          :class="{
-            'border-red-500 focus:border-red-500 focus:ring-red-200':
-              errors.title,
-          }"
+          :class="[
+            errors.title
+              ? '!border-red-500 !focus:border-red-500 !focus:ring-red-200'
+              : '',
+          ]"
           v-model="form.title"
           placeholder="กรุณาใส่ชื่อบทความภาษาไทย"
           @input="clearFieldError('title')"
@@ -47,10 +48,11 @@
         >
         <textarea
           class="form-input w-full resize-none"
-          :class="{
-            'border-red-500 focus:border-red-500 focus:ring-red-200':
-              errors.excerpt,
-          }"
+          :class="[
+            errors.excerpt
+              ? '!border-red-500 !focus:border-red-500 !focus:ring-red-200'
+              : '',
+          ]"
           v-model="form.excerpt"
           rows="2"
           placeholder="สรุปบทความสั้นๆ ภาษาไทย"
@@ -66,7 +68,7 @@
         >
         <div
           class="editor-wrapper"
-          :class="{ 'border-red-500': errors.content }"
+          :class="[errors.content ? '!border-red-500' : '']"
         >
           <div ref="editorThRef" class="quill-editor" />
         </div>

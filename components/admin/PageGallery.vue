@@ -225,10 +225,11 @@
                 >
                 <input
                   class="form-input"
-                  :class="{
-                    'border-red-500 focus:border-red-500 focus:ring-red-200':
-                      errors.caption_th,
-                  }"
+                  :class="[
+                    errors.caption_th
+                      ? '!border-red-500 !focus:border-red-500 !focus:ring-red-200'
+                      : '',
+                  ]"
                   v-model="form.caption_th"
                   placeholder="คำบรรยายภาษาไทย"
                   @input="clearFieldError('caption_th')"
@@ -314,7 +315,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, nextTick } from "vue";
 const props = defineProps<{ items: any[]; loading: boolean }>();
 const emit = defineEmits<{
   (e: "delete", id: string): void;
@@ -438,7 +439,19 @@ async function save() {
   }
 
   if (!isValid) {
-    if (errors.caption_th) modalLang.value = "th";
+    if (errors.caption_th) {
+      modalLang.value = "th";
+    }
+
+    await nextTick();
+
+    const firstErrorEl = document.querySelector(".modal .text-red-500");
+    if (firstErrorEl) {
+      firstErrorEl.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
     return;
   }
 
@@ -447,8 +460,14 @@ async function save() {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
     if (mediaFile.value) fd.append("media", mediaFile.value);
+
     const path = modal.editId ? `/gallery/${modal.editId}` : "/gallery";
-    await api.post(path, fd);
+    if (modal.editId) {
+      await api.put(path, fd);
+    } else {
+      await api.post(path, fd);
+    }
+
     modal.open = false;
     showSuccess("บันทึกสำเร็จ", "ข้อมูลได้รับการอัปเดตเรียบร้อยแล้ว");
     emit("saved");

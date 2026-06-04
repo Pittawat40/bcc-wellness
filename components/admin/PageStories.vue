@@ -196,10 +196,11 @@
                 >
                 <input
                   class="form-input"
-                  :class="{
-                    'border-red-500 focus:border-red-500 focus:ring-red-200':
-                      errors.title,
-                  }"
+                  :class="[
+                    errors.title
+                      ? '!border-red-500 !focus:border-red-500 !focus:ring-red-200'
+                      : '',
+                  ]"
                   v-model="form.title"
                   placeholder="เช่น ก้าวผ่านความล้มเหลว สู่ของขวัญล้ำค่า"
                   @input="clearFieldError('title')"
@@ -217,10 +218,11 @@
                 >
                 <textarea
                   class="form-input resize-none"
-                  :class="{
-                    'border-red-500 focus:border-red-500 focus:ring-red-200':
-                      errors.story,
-                  }"
+                  :class="[
+                    errors.story
+                      ? '!border-red-500 !focus:border-red-500 !focus:ring-red-200'
+                      : '',
+                  ]"
                   v-model="form.story"
                   rows="5"
                   placeholder="เล่าเรื่องราวประสบการณ์ของลูกค้า (ภาษาไทย)..."
@@ -331,7 +333,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, nextTick } from "vue";
 
 const props = defineProps<{ items: any[]; loading: boolean }>();
 const emit = defineEmits<{
@@ -404,7 +406,7 @@ function openModal(s?: any) {
     story_en: s?.story_en || "",
     author: s?.author || "",
     author_en: s?.author_en || "",
-    date: s?.date || "",
+    date: s?.date ? s.date.slice(0, 10) : "",
     cycle: s?.cycle || "",
     status: s?.status || "published",
     sort_order: s?.sort_order || 0,
@@ -466,6 +468,14 @@ async function save() {
 
   if (!isValid) {
     if (errors.title || errors.story) modalLang.value = "th";
+    await nextTick();
+    const firstErrorEl = document.querySelector(".modal .text-red-500");
+    if (firstErrorEl) {
+      firstErrorEl.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
     return;
   }
 
@@ -476,7 +486,11 @@ async function save() {
     if (imageFile.value) fd.append("image", imageFile.value);
 
     const path = modal.editId ? `/stories/${modal.editId}` : "/stories";
-    await api.post(path, fd);
+    if (modal.editId) {
+      await api.put(path, fd);
+    } else {
+      await api.post(path, fd);
+    }
     modal.open = false;
     showSuccess("บันทึกสำเร็จ", "ข้อมูลได้รับการอัปเดตเรียบร้อยแล้ว");
     emit("saved");
