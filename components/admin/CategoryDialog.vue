@@ -16,18 +16,40 @@
           <!-- Body -->
           <div class="cat-body">
             <div class="add-row">
-              <input class="form-input" v-model="newTh" placeholder="ชื่อหมวดหมู่ (TH) *" @keyup.enter="addCategory" />
-              <input class="form-input" v-model="newEn" placeholder="Category name (EN)" @keyup.enter="addCategory" />
-              <button class="btn btn-primary btn-sm" @click="addCategory" :disabled="!newTh.trim() || saving">
+              <input
+                class="form-input"
+                v-model="newTh"
+                placeholder="ชื่อหมวดหมู่ (TH) *"
+                @keyup.enter="addCategory"
+              />
+              <input
+                class="form-input"
+                v-model="newEn"
+                placeholder="Category name (EN)"
+                @keyup.enter="addCategory"
+              />
+              <button
+                class="btn btn-primary"
+                @click="addCategory"
+                :disabled="!newTh.trim() || !newEn.trim() || saving"
+              >
                 <i class="bi bi-plus-lg"></i> เพิ่ม
               </button>
             </div>
 
-            <div v-if="msg" :class="['alert', msgType]" style="margin-bottom:12px">{{ msg }}</div>
+            <div
+              v-if="msg"
+              :class="['alert', msgType]"
+              style="margin-bottom: 12px"
+            >
+              {{ msg }}
+            </div>
 
             <div class="cat-list">
-              <div v-if="loading" class="loading-state" style="padding:24px 0">
-                <div class="loading-dot"/><div class="loading-dot"/><div class="loading-dot"/>
+              <div v-if="loading" class="loading-state" style="padding: 24px 0">
+                <div class="loading-dot" />
+                <div class="loading-dot" />
+                <div class="loading-dot" />
               </div>
               <template v-else>
                 <div v-if="!categories.length" class="cat-empty">
@@ -35,23 +57,49 @@
                 </div>
                 <div v-for="cat in categories" :key="cat.id" class="cat-row">
                   <template v-if="editingId === cat.id">
-                    <input class="form-input" v-model="editTh" placeholder="TH *" @keyup.enter="saveEdit(cat)" />
-                    <input class="form-input" v-model="editEn" placeholder="EN" @keyup.enter="saveEdit(cat)" />
-                    <button class="btn btn-primary btn-sm" @click="saveEdit(cat)" :disabled="!editTh.trim()">
+                    <input
+                      class="form-input"
+                      v-model="editTh"
+                      placeholder="TH *"
+                      @keyup.enter="saveEdit(cat)"
+                    />
+                    <input
+                      class="form-input"
+                      v-model="editEn"
+                      placeholder="EN"
+                      @keyup.enter="saveEdit(cat)"
+                    />
+                    <button
+                      class="btn btn-primary btn-sm"
+                      @click="saveEdit(cat)"
+                      :disabled="!editTh.trim()"
+                    >
                       <i class="bi bi-floppy"></i>
                     </button>
-                    <button class="btn btn-ghost btn-sm" @click="editingId = null">
+                    <button
+                      class="btn btn-ghost btn-sm"
+                      @click="editingId = null"
+                    >
                       <i class="bi bi-x"></i>
                     </button>
                   </template>
                   <template v-else>
                     <div class="cat-name">
                       <span class="cat-th">{{ cat.name_th }}</span>
-                      <span v-if="cat.name_en" class="cat-en">{{ cat.name_en }}</span>
+                      <span v-if="cat.name_en" class="cat-en">{{
+                        cat.name_en
+                      }}</span>
                     </div>
                     <div class="cat-actions">
-                      <button class="btn-icon" @click="startEdit(cat)"><i class="bi bi-pencil"></i></button>
-                      <button class="btn-icon btn-icon-danger" @click="emit('delete-category', cat.id)"><i class="bi bi-trash3"></i></button>
+                      <button class="btn-icon" @click="startEdit(cat)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        class="btn-icon btn-icon-danger"
+                        @click="emit('delete-category', cat.id)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
                     </div>
                   </template>
                 </div>
@@ -84,7 +132,10 @@ defineProps<{
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "add-category", payload: { name_th: string; name_en: string }): void;
-  (e: "update-category", payload: { id: number | string; name_th: string; name_en: string }): void;
+  (
+    e: "update-category",
+    payload: { id: number | string; name_th: string; name_en: string },
+  ): void;
   (e: "delete-category", id: number | string): void;
 }>();
 
@@ -96,7 +147,10 @@ const editEn = ref("");
 
 function addCategory() {
   if (!newTh.value.trim()) return;
-  emit("add-category", { name_th: newTh.value.trim(), name_en: newEn.value.trim() });
+  emit("add-category", {
+    name_th: newTh.value.trim(),
+    name_en: newEn.value.trim(),
+  });
   newTh.value = "";
   newEn.value = "";
 }
@@ -107,7 +161,11 @@ function startEdit(cat: any) {
 }
 function saveEdit(cat: any) {
   if (!editTh.value.trim()) return;
-  emit("update-category", { id: cat.id, name_th: editTh.value.trim(), name_en: editEn.value.trim() });
+  emit("update-category", {
+    id: cat.id,
+    name_th: editTh.value.trim(),
+    name_en: editEn.value.trim(),
+  });
   editingId.value = null;
 }
 </script>
@@ -135,7 +193,7 @@ function saveEdit(cat: any) {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 
@@ -170,7 +228,10 @@ function saveEdit(cat: any) {
   justify-content: center;
   transition: background 0.15s;
 }
-.cat-close:hover { background: #f3f4f6; color: #111827; }
+.cat-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
 
 /* Body */
 .cat-body {
@@ -186,7 +247,10 @@ function saveEdit(cat: any) {
   margin-bottom: 16px;
   align-items: center;
 }
-.add-row .form-input { flex: 1; min-width: 0; }
+.add-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
 
 /* List */
 .cat-list {
@@ -211,11 +275,31 @@ function saveEdit(cat: any) {
   border-radius: 10px;
   background: #fafafa;
 }
-.cat-row .form-input { flex: 1; min-width: 0; }
-.cat-name { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.cat-th { font-size: 0.875rem; font-weight: 600; color: #111827; }
-.cat-en { font-size: 0.75rem; color: #6b7280; }
-.cat-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.cat-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
+.cat-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.cat-th {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+.cat-en {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+.cat-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 /* Footer */
 .cat-footer {
@@ -227,6 +311,12 @@ function saveEdit(cat: any) {
 }
 
 /* Transition */
-.modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
 </style>

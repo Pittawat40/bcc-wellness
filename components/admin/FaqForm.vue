@@ -1,41 +1,92 @@
 <template>
   <div>
-    <!-- Language Tabs -->
     <div class="lang-tabs">
-      <button :class="['lang-tab', { active: lang === 'th' }]" @click="lang = 'th'">
+      <button
+        :class="[
+          'lang-tab',
+          { active: lang === 'th' },
+          { 'has-error': errors.question || errors.answer },
+        ]"
+        @click="lang = 'th'"
+      >
         🇹🇭 ภาษาไทย
       </button>
-      <button :class="['lang-tab', { active: lang === 'en' }]" @click="lang = 'en'">
+      <button
+        :class="['lang-tab', { active: lang === 'en' }]"
+        @click="lang = 'en'"
+      >
         🇬🇧 English
       </button>
     </div>
 
     <div v-show="lang === 'th'">
       <div class="form-group">
-        <label class="form-label">คำถาม (TH) <span class="required">*</span></label>
-        <input class="form-input" v-model="form.question" placeholder="คำถามภาษาไทย" />
+        <label class="form-label"
+          >คำถาม (TH) <span class="required">*</span></label
+        >
+        <input
+          class="form-input"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-200':
+              errors.question,
+          }"
+          v-model="form.question"
+          placeholder="คำถามภาษาไทย"
+          @input="clearFieldError('question')"
+        />
+        <p v-if="errors.question" class="text-red-500 text-xs mt-1 font-medium">
+          {{ errors.question }}
+        </p>
       </div>
       <div class="form-group">
-        <label class="form-label">คำตอบ (TH) <span class="required">*</span></label>
-        <textarea class="form-textarea" v-model="form.answer" rows="5" placeholder="คำตอบภาษาไทย" />
+        <label class="form-label"
+          >คำตอบ (TH) <span class="required">*</span></label
+        >
+        <textarea
+          class="form-textarea"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-200':
+              errors.answer,
+          }"
+          v-model="form.answer"
+          rows="5"
+          placeholder="คำตอบภาษาไทย"
+          @input="clearFieldError('answer')"
+        />
+        <p v-if="errors.answer" class="text-red-500 text-xs mt-1 font-medium">
+          {{ errors.answer }}
+        </p>
       </div>
     </div>
 
     <div v-show="lang === 'en'">
       <div class="form-group">
         <label class="form-label">Question (EN)</label>
-        <input class="form-input" v-model="form.question_en" placeholder="Question in English" />
+        <input
+          class="form-input"
+          v-model="form.question_en"
+          placeholder="คำถามภาษาอังกฤษ"
+        />
       </div>
       <div class="form-group">
         <label class="form-label">Answer (EN)</label>
-        <textarea class="form-textarea" v-model="form.answer_en" rows="5" placeholder="Answer in English" />
+        <textarea
+          class="form-textarea"
+          v-model="form.answer_en"
+          rows="5"
+          placeholder="คำตอบภาษาอังกฤษ"
+        />
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">หมวดหมู่</label>
-        <select class="form-input" v-model="form.category">
+        <select
+          class="form-input"
+          v-model="form.category"
+          @change="onCategoryChange"
+        >
           <option value="" disabled>-- เลือกหมวดหมู่ --</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.name_th">
             {{ cat.name_th }}{{ cat.name_en ? ` · ${cat.name_en}` : "" }}
@@ -54,11 +105,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, reactive, nextTick } from "vue";
 
 const lang = ref<"th" | "en">("th");
 
-defineProps<{
+const props = defineProps<{
   categories: { id: number | string; name_th: string; name_en: string }[];
 }>();
 
@@ -68,13 +119,75 @@ const form = defineModel<{
   answer: string;
   answer_en: string;
   category: string;
+  category_en: string;
   sort_order: number;
   status: string;
 }>({ required: true });
+
+const errors = reactive({
+  question: "",
+  answer: "",
+});
+
+function onCategoryChange() {
+  const selected = props.categories.find(
+    (c) => c.name_th === form.value.category,
+  );
+  form.value.category_en = selected?.name_en || "";
+}
+
+const clearFieldError = (field: keyof typeof errors) => {
+  errors[field] = "";
+};
+
+const clearAllErrors = () => {
+  errors.question = "";
+  errors.answer = "";
+};
+
+const scrollToFirstError = () => {
+  const firstErrorElement = document.querySelector(".text-red-500");
+  if (firstErrorElement) {
+    firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+};
+
+const validateForm = () => {
+  let isValid = true;
+  errors.question = "";
+  errors.answer = "";
+
+  if (!form.value.question || !form.value.question.trim()) {
+    errors.question = "กรุณากรอกคำถามภาษาไทย";
+    isValid = false;
+  }
+
+  if (!form.value.answer || !form.value.answer.trim()) {
+    errors.answer = "กรุณากรอกคำตอบภาษาไทย";
+    isValid = false;
+  }
+
+  if (!isValid) {
+    lang.value = "th";
+
+    nextTick(() => {
+      scrollToFirstError();
+    });
+  }
+
+  return isValid;
+};
+
+defineExpose({
+  validateForm,
+  clearAllErrors,
+});
 </script>
 
 <style scoped>
-.required { color: #ef4444; }
+.required {
+  color: #ef4444;
+}
 .lang-tabs {
   display: flex;
   gap: 4px;
@@ -98,5 +211,13 @@ const form = defineModel<{
   border-bottom-color: #fff;
   color: #111827;
   font-weight: 600;
+}
+.lang-tab.has-error {
+  border-top: 2px solid #ef4444;
+  color: #ef4444;
+}
+.form-input.border-red-500,
+.form-textarea.border-red-500 {
+  border-color: #ef4444 !important;
 }
 </style>

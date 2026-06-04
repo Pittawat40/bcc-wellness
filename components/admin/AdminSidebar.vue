@@ -97,8 +97,8 @@ const emit = defineEmits<{
 
 const contentItems = [
   { page: "gallery", icon: "bi-images", label: "แกลเลอรี่" },
-  { page: "articles", icon: "bi-file-earmark-text", label: "บทความ" },
   { page: "stories", icon: "bi-award", label: "ความสำเร็จ" },
+  { page: "articles", icon: "bi-file-earmark-text", label: "บทความ" },
   { page: "videos", icon: "bi-camera-video", label: "วิดีโอ" },
   { page: "reviews", icon: "bi-star", label: "รีวิว" },
 ];
