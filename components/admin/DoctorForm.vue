@@ -1,6 +1,6 @@
 <template>
   <div
-    class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+    class="max-w-3xl mx-auto bg-white rounded-none md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
   >
     <div
       class="pt-6 pb-0 flex flex-col items-center bg-gradient-to-b from-gray-50/50 to-white"
@@ -75,7 +75,9 @@
           :class="[
             'lang-tab',
             { active: lang === 'th' },
-            { 'has-error': errors.name },
+            {
+              'has-error': errors.name || errors.title || errors.educationText,
+            },
           ]"
           @click="lang = 'th'"
         >
@@ -90,7 +92,7 @@
       </div>
     </div>
 
-    <div class="px-8 pb-10">
+    <div class="px-4 pb-2 md:px-8 md:pb-10">
       <Transition name="fade" mode="out-in">
         <div v-if="lang === 'th'" key="th" class="lang-panel space-y-5">
           <div class="form-group">
@@ -113,13 +115,24 @@
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >ตำแหน่ง (TH)</label
+              >ตำแหน่ง (TH) <span class="required">*</span></label
             >
             <input
               class="form-input w-full"
+              :class="{
+                'border-red-500 focus:border-red-500 focus:ring-red-200':
+                  errors.title,
+              }"
               v-model="form.title"
               placeholder="แพทย์ผู้เชี่ยวชาญด้าน..."
+              @input="clearFieldError('title')"
             />
+            <p
+              v-if="errors.title"
+              class="text-red-500 text-xs mt-1 font-medium"
+            >
+              {{ errors.title }}
+            </p>
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
@@ -134,21 +147,33 @@
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >การศึกษา (1 บรรทัดต่อ 1 รายการ)</label
+              >การศึกษา (1 บรรทัดต่อ 1 รายการ)
+              <span class="required">*</span></label
             >
             <textarea
               class="form-input w-full resize-none font-light text-sm"
+              :class="{
+                'border-red-500 focus:border-red-500 focus:ring-red-200':
+                  errors.educationText,
+              }"
               v-model="form.educationText"
               rows="4"
               placeholder="ระบุวุฒิการศึกษา..."
+              @input="clearFieldError('educationText')"
             />
+            <p
+              v-if="errors.educationText"
+              class="text-red-500 text-xs mt-1 font-medium"
+            >
+              {{ errors.educationText }}
+            </p>
           </div>
         </div>
 
         <div v-else key="en" class="lang-panel space-y-5">
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >Doctor Name (EN)</label
+              >ชื่อแพทย์ (EN)</label
             >
             <input
               class="form-input w-full"
@@ -158,7 +183,7 @@
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >Title / Position (EN)</label
+              >ตำแหน่ง (EN)</label
             >
             <input
               class="form-input w-full"
@@ -168,7 +193,7 @@
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >Biography (EN)</label
+              >ประวัติย่อ (EN)</label
             >
             <textarea
               class="form-input w-full resize-none"
@@ -179,7 +204,7 @@
           </div>
           <div class="form-group">
             <label class="form-label font-semibold text-gray-700"
-              >Education (One per line)</label
+              >การศึกษา (1 บรรทัดต่อ 1 รายการ EN)</label
             >
             <textarea
               class="form-input w-full resize-none font-light text-sm"
@@ -231,6 +256,8 @@ const form = defineModel<{
 
 const errors = reactive({
   name: "",
+  title: "",
+  educationText: "",
   photo: "",
 });
 
@@ -285,6 +312,8 @@ const clearFieldError = (field: keyof typeof errors) => {
 
 const clearAllErrors = () => {
   errors.name = "";
+  errors.title = "";
+  errors.educationText = "";
   errors.photo = "";
 };
 
@@ -300,6 +329,8 @@ const scrollToFirstError = () => {
 const validateForm = () => {
   let isValid = true;
   errors.name = "";
+  errors.title = "";
+  errors.educationText = "";
   errors.photo = "";
 
   if (!hasImage.value) {
@@ -312,8 +343,18 @@ const validateForm = () => {
     isValid = false;
   }
 
+  if (!form.value.title || !form.value.title.trim()) {
+    errors.title = "กรุณากรอกตำแหน่งภาษาไทย";
+    isValid = false;
+  }
+
+  if (!form.value.educationText || !form.value.educationText.trim()) {
+    errors.educationText = "กรุณากรอกประวัติการศึกษาภาษาไทย";
+    isValid = false;
+  }
+
   if (!isValid) {
-    if (errors.name) {
+    if (errors.name || errors.title || errors.educationText) {
       lang.value = "th";
     }
 
@@ -353,7 +394,7 @@ defineExpose({
   margin-bottom: -2px;
 }
 .lang-tab.active {
-  color: #d86d28; /* สีส้ม Brand */
+  color: #d86d28;
   border-bottom-color: #d86d28;
   font-weight: 700;
 }
@@ -388,7 +429,6 @@ defineExpose({
   color: #ef4444;
 }
 
-/* Transition effects */
 .fade-enter-active,
 .fade-leave-active {
   transition:

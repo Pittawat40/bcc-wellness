@@ -1,51 +1,145 @@
 <template>
-  <div>
-    <div class="page-header">
-      <div>
+  <div class="page-container">
+    <div class="page-header-gallery">
+      <div class="header-text-group">
         <h2 class="page-title">แกลเลอรี่</h2>
         <p class="page-subtitle">
-          จัดการรูปภาพ/วิดีโอแสดงในหน้าแรก ({{ items.length }} รายการ)
+          จัดการแกลเลอรี่ทั้งหมด ({{ items.length }} รายการ)
         </p>
       </div>
-      <button class="btn btn-primary" @click="openModal()">
+      <button class="btn btn-add-gallery" @click="openModal()">
         <span>+</span> เพิ่มแกลเลอรี่
       </button>
     </div>
 
-    <div class="card">
+    <div class="main-content-card">
       <div v-if="loading" class="loading-state">
         <div class="loading-dot" />
         <div class="loading-dot" />
         <div class="loading-dot" />
       </div>
-      <div v-else class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th style="width: 100px">Preview</th>
-              <th>คำบรรยาย TH / EN</th>
-              <th>ประเภท</th>
-              <th>สถานะ</th>
-              <th>วันที่สร้าง</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!items.length">
-              <td colspan="7" class="empty-state">
-                <div class="empty-state-inner">
-                  <i class="bi bi-images empty-icon"></i
-                  ><span>ยังไม่มีแกลเลอรี่</span>
-                </div>
-              </td>
-            </tr>
-            <tr v-for="(g, index) in items" :key="g.id">
-              <td>
-                <span class="ps-2">{{ index + 1 }}</span>
-              </td>
-              <td>
-                <div class="thumb-wrap">
+      <div v-else>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px"></th>
+                <th style="width: 100px">Preview</th>
+                <th>คำบรรยาย TH / EN</th>
+                <th style="width: 120px">ประเภท</th>
+                <th style="width: 100px">สถานะ</th>
+                <th style="width: 150px">วันที่สร้าง</th>
+                <th style="width: 90px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!items.length">
+                <td colspan="7" class="empty-state">
+                  <div class="empty-state-inner">
+                    <i class="bi bi-images empty-icon"></i
+                    ><span>ยังไม่มีแกลเลอรี่</span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="(g, index) in items" :key="g.id">
+                <td>
+                  <span class="ps-2">{{ index + 1 }}</span>
+                </td>
+                <td>
+                  <div class="thumb-wrap">
+                    <video
+                      v-if="g.media_type === 'video'"
+                      :src="mediaUrl(g.media_url)"
+                      class="thumb"
+                      muted
+                      playsinline
+                    />
+                    <img v-else :src="mediaUrl(g.media_url)" class="thumb" />
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-primary line-clamp-1">
+                    {{ g.caption_th || "–" }}
+                  </div>
+                  <div class="cell-secondary line-clamp-1">
+                    {{ g.caption_en || "–" }}
+                  </div>
+                </td>
+                <td>
+                  <span class="tag flex items-center gap-4 whitespace-nowrap">
+                    <i
+                      v-if="g.media_type === 'video'"
+                      class="bi bi-film text-brand mr-1"
+                    ></i>
+                    <i v-else class="bi bi-image text-brand mr-1"></i>
+                    {{ g.media_type === "video" ? "Video" : "Image" }}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    class="whitespace-nowrap"
+                    :class="[
+                      'badge',
+                      g.status === 'published' ? 'badge-green' : 'badge-gray',
+                    ]"
+                  >
+                    {{ g.status === "published" ? "เผยแพร่" : "ซ่อน" }}
+                  </span>
+                </td>
+                <td>
+                  <div class="cell-secondary whitespace-nowrap">
+                    {{ g.created_at?.slice(0, 16).replace("T", " ") }}
+                  </div>
+                </td>
+                <td>
+                  <div class="action-group">
+                    <button
+                      class="btn-icon"
+                      @click="openModal(g)"
+                      title="แก้ไข"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      class="btn-icon btn-icon-danger"
+                      @click="emit('delete', g.id)"
+                      title="ลบ"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-only mobile-cards-list">
+          <div v-if="!items.length" class="empty-state-mobile">
+            <i class="bi bi-images empty-icon"></i>
+            <span>ยังไม่มีแกลเลอรี่</span>
+          </div>
+
+          <div
+            v-for="(g, index) in items"
+            :key="g.id"
+            class="mobile-responsive-card"
+          >
+            <div class="mobile-card-header">
+              <span class="mobile-item-number">#{{ index + 1 }}</span>
+              <span
+                :class="[
+                  'badge',
+                  g.status === 'published' ? 'badge-green' : 'badge-gray',
+                ]"
+              >
+                {{ g.status === "published" ? "เผยแพร่" : "ซ่อน" }}
+              </span>
+            </div>
+
+            <div class="mobile-card-body">
+              <div class="mobile-media-row">
+                <div class="thumb-wrap-mobile">
                   <video
                     v-if="g.media_type === 'video'"
                     :src="mediaUrl(g.media_url)"
@@ -55,58 +149,50 @@
                   />
                   <img v-else :src="mediaUrl(g.media_url)" class="thumb" />
                 </div>
-              </td>
-              <td>
-                <div class="cell-primary line-clamp-1">
-                  {{ g.caption_th || "–" }}
+                <div class="mobile-captions">
+                  <div class="cell-primary mobile-caption-text line-clamp-1">
+                    {{ g.caption_th || "–" }}
+                  </div>
+                  <div class="cell-secondary mobile-caption-text line-clamp-1">
+                    {{ g.caption_en || "–" }}
+                  </div>
                 </div>
-                <div class="cell-secondary line-clamp-1">
-                  {{ g.caption_en || "–" }}
+              </div>
+
+              <div class="mobile-meta-grid mt-2">
+                <div class="meta-item">
+                  <span class="meta-label">ประเภท:</span>
+                  <span class="tag inline-flex items-center gap-1">
+                    <i
+                      v-if="g.media_type === 'video'"
+                      class="bi bi-film text-brand"
+                    ></i>
+                    <i v-else class="bi bi-image text-brand"></i>
+                    {{ g.media_type === "video" ? "Video" : "Image" }}
+                  </span>
                 </div>
-              </td>
-              <td>
-                <span class="tag flex items-center gap-4 whitespace-nowrap">
-                  <i
-                    v-if="g.media_type === 'video'"
-                    class="bi bi-film text-brand mr-1"
-                  ></i>
-                  <i v-else class="bi bi-image text-brand mr-1"></i>
-                  {{ g.media_type === "video" ? "Video" : "Image" }}
-                </span>
-              </td>
-              <td>
-                <span
-                  class="whitespace-nowrap"
-                  :class="[
-                    'badge',
-                    g.status === 'published' ? 'badge-green' : 'badge-gray',
-                  ]"
-                >
-                  {{ g.status === "published" ? "เผยแพร่" : "ซ่อน" }}
-                </span>
-              </td>
-              <td>
-                <div class="cell-secondary whitespace-nowrap">
-                  {{ g.created_at?.slice(0, 16).replace("T", " ") }}
+                <div class="meta-item">
+                  <span class="meta-label">วันที่สร้าง:</span>
+                  <span class="cell-secondary">{{
+                    g.created_at?.slice(0, 10)
+                  }}</span>
                 </div>
-              </td>
-              <td>
-                <div class="action-group">
-                  <button class="btn-icon" @click="openModal(g)" title="แก้ไข">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    class="btn-icon btn-icon-danger"
-                    @click="emit('delete', g.id)"
-                    title="ลบ"
-                  >
-                    <i class="bi bi-trash3"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+
+            <div class="mobile-card-footer">
+              <button class="mobile-btn-action btn-edit" @click="openModal(g)">
+                <i class="bi bi-pencil"></i> แก้ไข
+              </button>
+              <button
+                class="mobile-btn-action btn-delete"
+                @click="emit('delete', g.id)"
+              >
+                <i class="bi bi-trash3"></i> ลบรายการ
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -174,7 +260,7 @@
                     :class="errors.media ? 'text-red-400' : 'text-neutral-400'"
                   ></i>
                   <span
-                    class="text-sm"
+                    class="text-sm text-center px-4"
                     :class="
                       errors.media
                         ? 'text-red-500 font-medium'
@@ -250,7 +336,7 @@
                 />
               </div>
 
-              <div class="grid grid-cols-2 gap-4 mb-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                 <div class="form-group">
                   <label class="form-label">Col Span</label>
                   <select class="form-input" v-model="form.col_span">
@@ -269,7 +355,7 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="form-group">
                   <label class="form-label">สถานะ</label>
                   <select class="form-input" v-model="form.status">
@@ -284,7 +370,7 @@
                 ยกเลิก
               </button>
               <button
-                class="btn btn-primary"
+                class="btn btn-primary main-submit-btn"
                 :disabled="modal.saving"
                 @click="save"
               >
@@ -298,6 +384,7 @@
         </div>
       </Transition>
     </Teleport>
+
     <AdminConfirmDialog
       :open="successDialog.open"
       :title="successDialog.title"
@@ -480,6 +567,79 @@ async function save() {
 </script>
 
 <style scoped>
+.page-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 4px;
+}
+
+/* ควบคุมบ็อกซ์สีขาวของ Desktop */
+.main-content-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-header-gallery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+.header-text-group {
+  flex: 1;
+  min-width: 0;
+}
+.page-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+.page-subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.btn {
+  justify-content: center;
+}
+
+.btn-add-gallery {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  background: #de6e35;
+  color: #fff;
+}
+
+.btn-add-gallery:hover {
+  background: #cb5d26;
+  transform: translateY(-1px);
+}
+
+/* ── แยกการโชว์ผล Desktop/Mobile ให้ถูกต้องตามมาตรฐาน ── */
+.desktop-only {
+  display: block !important;
+}
+.mobile-only {
+  display: none !important;
+}
+
 .thumb-wrap {
   width: 80px;
   height: 56px;
@@ -522,6 +682,8 @@ async function save() {
   border-top: 2px solid #ef4444;
   color: #ef4444;
 }
+
+/* ── Modal Design ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -531,27 +693,26 @@ async function save() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
 }
 .modal {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 100%;
   max-width: 640px;
-  max-height: 92vh;
-  overflow-y: auto;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px 16px;
+  padding: 18px 20px;
   border-bottom: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
   background: #fff;
-  z-index: 2;
 }
 .modal-header h3 {
   font-size: 1rem;
@@ -576,16 +737,142 @@ async function save() {
   color: #1c1728;
 }
 .modal-body {
-  padding: 20px 24px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 .modal-footer {
-  padding: 14px 24px;
+  padding: 14px 20px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
   background: #f9fafb;
 }
+
+/* ── Mobile Responsive Cards Style ── */
+.mobile-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.mobile-responsive-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 8px;
+}
+.mobile-item-number {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+.mobile-media-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.thumb-wrap-mobile {
+  width: 90px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+.mobile-captions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.mobile-caption-text {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+}
+.mobile-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+}
+.meta-label {
+  color: #6b7280;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.mobile-card-footer {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 12px;
+  width: 100%;
+}
+.mobile-btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mobile-btn-action.btn-edit {
+  color: #4b5563;
+}
+.mobile-btn-action.btn-edit:hover {
+  background: #f9fafb;
+}
+.mobile-btn-action.btn-delete {
+  color: #ef4444;
+  border-color: #fee2e2;
+  background: #fef2f2;
+}
+.mobile-btn-action.btn-delete:hover {
+  background: #fee2e2;
+}
+.empty-state-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  color: #9ca3af;
+  gap: 8px;
+}
+
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.2s ease;
@@ -596,5 +883,43 @@ async function save() {
 }
 .required {
   color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
+  }
+
+  /* ล้างกรอบขาวซ้อนที่ทำจอล้นขวาบนมือถือ */
+  .main-content-card {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .mobile-cards-list {
+    padding: 12px 0px !important;
+  }
+
+  .page-header-gallery {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 16px;
+  }
+  .page-title {
+    font-size: 1.25rem !important;
+  }
+  .modal {
+    max-height: 90vh;
+  }
+  .modal-footer .btn {
+    width: 100%;
+  }
+  .main-submit-btn {
+    justify-content: center;
+  }
 }
 </style>

@@ -24,8 +24,12 @@ export function useAppointmentNotify(callbacks?: {
       const res = await api.get(
         `/appointments/check-new?since=${encodeURIComponent(state.lastChecked)}`,
       );
+
       state.lastChecked = getLocalTime();
-      latestAppointments.value = res.latest || [];
+      if (res.latest && res.latest.length > 0) {
+        latestAppointments.value = res.latest;
+      }
+
       if (res.hasNew) {
         if (isOnAppointmentPage.value) {
           callbacks?.onNewAppointment?.();

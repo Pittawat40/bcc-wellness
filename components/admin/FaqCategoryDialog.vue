@@ -230,7 +230,24 @@ function saveEdit(cat: any) {
 .me-2 {
   margin-right: 0.5rem;
 }
+
 .mb-3 {
   margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .add-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .add-row .form-input {
+    flex: 1;
+    width: auto;
+  }
+
+  .add-row .btn-add {
+    width: auto;
+  }
 }
 </style>

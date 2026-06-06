@@ -140,4 +140,19 @@ const emit = defineEmits<{ (e: "close"): void; (e: "save"): void }>();
 .modal-enter-from .modal {
   transform: scale(0.95) translateY(8px);
 }
+
+@media (max-width: 768px) {
+  .modal-header {
+    padding: 16px;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>

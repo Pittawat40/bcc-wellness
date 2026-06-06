@@ -23,7 +23,7 @@
               <input
                 class="form-input"
                 v-model="newEn"
-                placeholder="Category name (EN)"
+                placeholder="ชื่อหมวดหมู่ (EN) *"
                 @keyup.enter="addCategory"
               />
               <button
@@ -299,5 +299,16 @@ function saveEdit(cat: any) {
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
+}
+@media (max-width: 768px) {
+  .add-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .add-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

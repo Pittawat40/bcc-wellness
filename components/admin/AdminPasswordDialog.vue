@@ -28,7 +28,7 @@
               :type="show.current ? 'text' : 'password'"
               :disabled="saving"
               @input="errors.current = ''"
-              autocomplete="off"
+              autocomplete="password"
             />
             <button
               type="button"
@@ -55,7 +55,7 @@
               :type="show.newPw ? 'text' : 'password'"
               :disabled="saving"
               @input="errors.newPw = ''"
-              autocomplete="off"
+              autocomplete="new-password"
             />
             <button
               type="button"
@@ -80,7 +80,7 @@
               :type="show.confirm ? 'text' : 'password'"
               :disabled="saving"
               @input="errors.confirm = ''"
-              autocomplete="off"
+              autocomplete="confirm-new-password"
             />
             <button
               type="button"

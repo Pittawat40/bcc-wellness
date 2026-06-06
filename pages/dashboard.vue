@@ -97,7 +97,9 @@
             :loading="loading"
             @update-status="updateAppointmentStatus"
             @save-note="saveAppointmentNote"
-            @delete="deleteItem('/appointments/', $event, loadAppointments)"
+            @delete-appointment="
+              deleteItem('/appointments/', $event, loadAppointments)
+            "
             @search="searchAppointments"
           />
 
@@ -138,7 +140,7 @@
       </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Modal ต่างๆ คงเดิมตามโครงสร้างของคอมโพเนนต์คุณ -->
     <AdminModal
       :open="modal.open"
       :title="modal.title"
@@ -159,6 +161,7 @@
       <AdminVideoForm
         v-else-if="modal.type === 'video'"
         v-model="videoForm"
+        :current-thumb="modal.currentImage"
         ref="videoFormRef"
       />
       <AdminReviewForm
@@ -274,7 +277,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 useSeoMeta({ title: "BCC IVF Wellness – Admin" });
 definePageMeta({ layout: "admin" });
@@ -291,11 +295,16 @@ const {
 
 const api = useAdminApi();
 const router = useRouter();
+const route = useRoute(); // ดึง Route ปัจจุบันมาใช้แกะ Query string
 const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
 
 const adminUsername = ref("");
 const sidebarOpen = ref(false);
+
+const currentPage = computed(() => {
+  return (route.query.page as string) || "dashboard";
+});
 
 onMounted(() => {
   if (!api.isLoggedIn()) {
@@ -306,8 +315,9 @@ onMounted(() => {
     .me()
     .then((d) => {
       adminUsername.value = d.username;
-      showPage("dashboard");
-      startPolling(30000);
+
+      loadPageData(currentPage.value);
+      startPolling(10000);
     })
     .catch(() => doLogout());
 });
@@ -322,10 +332,9 @@ function getToken() {
   return process.client ? localStorage.getItem("ivf_token") || "" : "";
 }
 
-const currentPage = ref("dashboard");
 const loading = ref(false);
 
-// ── Data refs
+// ── Data refs คงเดิมทั้งหมด
 const articles = ref<any[]>([]);
 const articleTotal = ref(0);
 const videos = ref<any[]>([]);
@@ -351,7 +360,6 @@ const socialEdit = ref<any[]>([]);
 const socialReorderSaving = ref(false);
 const reviewCategories = ref([]);
 
-// ── Dialogs
 const pwMsg = ref("");
 const pwMsgType = ref("alert-success");
 const confirmDialog = reactive({
@@ -381,7 +389,6 @@ const categoryDialog = reactive({
   msg: "",
   msgType: "alert-success",
 });
-
 const reviewCategoryDialog = reactive({
   open: false,
   loading: false,
@@ -405,7 +412,7 @@ function showSuccess(title: string, message: string, onConfirm?: () => void) {
   Object.assign(successDialog, { title, message, onConfirm, open: true });
 }
 
-// ── Modal
+// ── Modal & Forms State
 const modal = reactive({
   open: false,
   type: "",
@@ -415,8 +422,6 @@ const modal = reactive({
   saving: false,
   currentImage: "",
 });
-
-// ── Forms
 const articleForm = reactive({
   title: "",
   title_en: "",
@@ -502,40 +507,52 @@ watch(
   { deep: true },
 );
 
-// ── Navigation
+watch(currentPage, (newPage) => {
+  setOnAppointmentPage(newPage === "appointments");
+  loadPageData(newPage);
+});
+
 async function showPage(page: string) {
-  setOnAppointmentPage(page === "appointments");
   if (page === "password") {
     pwMsg.value = "";
     passwordDialog.open = true;
     sidebarOpen.value = false;
     return;
   }
-  const targetPage = page === "social" ? "contact" : page;
-  currentPage.value = targetPage;
+
   sidebarOpen.value = false;
+
+  router.push({
+    path: "/dashboard",
+    query: { page: page },
+  });
+}
+
+async function loadPageData(targetPage: string) {
+  const actualPage = targetPage === "social" ? "contact" : targetPage;
   loading.value = true;
   try {
-    if (targetPage === "dashboard") await loadDashboard();
-    else if (targetPage === "articles")
+    if (actualPage === "dashboard") await loadDashboard();
+    else if (actualPage === "articles")
       await Promise.all([loadArticles(), loadArticleCategories()]);
-    else if (targetPage === "videos") await loadVideos();
-    else if (targetPage === "stories") await loadStories();
-    else if (targetPage === "reviews")
+    else if (actualPage === "videos") await loadVideos();
+    else if (actualPage === "stories") await loadStories();
+    else if (actualPage === "reviews")
       await Promise.all([loadReviews(), loadReviewCategories()]);
-    else if (targetPage === "doctors") await loadDoctors();
-    else if (targetPage === "faq")
+    else if (actualPage === "doctors") await loadDoctors();
+    else if (actualPage === "faq")
       await Promise.all([loadFaqs(), loadFaqCategories()]);
-    else if (targetPage === "appointments") await loadAppointments();
-    else if (targetPage === "gallery") await loadGallery();
-    else if (targetPage === "contact")
+    else if (actualPage === "appointments") await loadAppointments();
+    else if (actualPage === "gallery") await loadGallery();
+    else if (actualPage === "contact")
       await Promise.all([loadContact(), loadSocial()]);
+  } catch (e: any) {
+    console.error("Failed to load page data:", e);
   } finally {
     loading.value = false;
   }
 }
 
-// ── Loaders
 async function loadDashboard() {
   const [a, v, r, d, f, st, appt, g] = await Promise.all([
     api.getArticles({ limit: 1 }),
@@ -672,7 +689,7 @@ async function loadSocial() {
   );
 }
 
-// ── Search handlers
+// ── Search handlers (คงเดิมทั้งหมด)
 async function searchArticles(p: any) {
   loading.value = true;
   try {
@@ -722,7 +739,7 @@ async function searchAppointments(p: any) {
   }
 }
 
-// ── Delete
+// ── Delete (คงเดิม)
 async function deleteItem(
   prefix: string,
   id: string | number,
@@ -799,7 +816,6 @@ async function onDeleteReviewCategory(id: number | string) {
     },
   );
 }
-
 async function openArticleCategoryDialog() {
   articleCategoryDialog.open = true;
   articleCategoryDialog.msg = "";
@@ -809,7 +825,6 @@ async function openArticleCategoryDialog() {
     articleCategoryDialog.loading = false;
   }
 }
-
 async function onAddArticleCategory(payload: {
   name_th: string;
   name_en: string;
@@ -828,7 +843,6 @@ async function onAddArticleCategory(payload: {
     articleCategoryDialog.saving = false;
   }
 }
-
 async function onUpdateArticleCategory(payload: {
   id: number | string;
   name_th: string;
@@ -841,7 +855,6 @@ async function onUpdateArticleCategory(payload: {
     showAlert("เกิดข้อผิดพลาด", e.message);
   }
 }
-
 async function onDeleteArticleCategory(id: number | string) {
   showConfirm(
     "ลบหมวดหมู่",
@@ -856,7 +869,6 @@ async function onDeleteArticleCategory(id: number | string) {
     },
   );
 }
-
 async function openCategoryDialog() {
   categoryDialog.open = true;
   categoryDialog.msg = "";
@@ -866,7 +878,6 @@ async function openCategoryDialog() {
     categoryDialog.loading = false;
   }
 }
-
 async function onAddCategory(payload: { name_th: string; name_en: string }) {
   categoryDialog.saving = true;
   categoryDialog.msg = "";
@@ -882,7 +893,6 @@ async function onAddCategory(payload: { name_th: string; name_en: string }) {
     categoryDialog.saving = false;
   }
 }
-
 async function onUpdateCategory(payload: {
   id: number | string;
   name_th: string;
@@ -895,7 +905,6 @@ async function onUpdateCategory(payload: {
     showAlert("เกิดข้อผิดพลาด", e.message);
   }
 }
-
 async function onDeleteCategory(id: number | string) {
   showConfirm(
     "ลบหมวดหมู่",
@@ -910,8 +919,30 @@ async function onDeleteCategory(id: number | string) {
     },
   );
 }
-
-// ── Appointment handlers
+async function savePassword(payload: any) {
+  pwMsg.value = "";
+  if (payload.newPw !== payload.confirm) {
+    pwMsg.value = "รหัสผ่านใหม่ไม่ตรงกัน";
+    pwMsgType.value = "alert-error";
+    return;
+  }
+  passwordDialog.saving = true;
+  try {
+    await api.changePassword(payload.current, payload.newPw);
+    passwordDialog.open = false;
+    pwMsg.value = "";
+    passwordPageRef.value?.resetForm();
+    showSuccess(
+      "เปลี่ยนรหัสผ่านสำเร็จ",
+      "ระบบได้ปรับปรุงรหัสผ่านใหม่เรียบร้อยแล้ว",
+    );
+  } catch (e: any) {
+    pwMsg.value = e.message;
+    pwMsgType.value = "alert-error";
+  } finally {
+    passwordDialog.saving = false;
+  }
+}
 async function updateAppointmentStatus(id: number, status: string) {
   try {
     adminPageAppointmentsRef.value.filter = status;
@@ -931,8 +962,6 @@ async function saveAppointmentNote(id: number, note: string) {
     showAlert("เกิดข้อผิดพลาด", e.message);
   }
 }
-
-// ── Contact handlers
 async function saveContact(data: any[]) {
   try {
     await api.put("/settings/contact", { contactInfo: data });
@@ -996,7 +1025,6 @@ async function socialReorder(index: number, direction: number) {
     }
   }, 600);
 }
-
 async function socialToggle(social: any) {
   social._updating = true;
   try {
@@ -1018,8 +1046,6 @@ async function socialToggle(social: any) {
     social._updating = false;
   }
 }
-
-// ── Modal openers
 function openArticleModal(a?: any) {
   if (!articleCategories.value.length) loadArticleCategories();
   modal.error = "";
@@ -1050,6 +1076,12 @@ function openVideoModal(v?: any) {
   modal.title = v ? "แก้ไขวิดีโอ" : "เพิ่มวิดีโอ";
   modal.editId = v?.id || null;
   modal.open = true;
+  modal.currentImage = v?.thumbnail
+    ? v.thumbnail.startsWith("http")
+      ? v.thumbnail
+      : (useRuntimeConfig().public.apiBase as string).replace("/api", "") +
+        v.thumbnail
+    : "";
   Object.assign(videoForm, {
     title: v?.title || "",
     title_en: v?.title_en || "",
@@ -1117,17 +1149,13 @@ function openFaqModal(f?: any) {
     status: f?.status || "published",
   });
 }
-
-// ── Save Modal
 async function saveModal() {
   modal.saving = true;
   modal.error = "";
   try {
     if (modal.type === "article") {
       const isChildValid = articleFormRef.value?.validateForm();
-      if (!isChildValid) {
-        return;
-      }
+      if (!isChildValid) return;
       const fd = new FormData();
       Object.entries(articleForm).forEach(([k, v]) =>
         fd.append(k, v as string),
@@ -1141,9 +1169,7 @@ async function saveModal() {
       await loadArticles();
     } else if (modal.type === "video") {
       const isChildValid = videoFormRef.value?.validateForm();
-      if (!isChildValid) {
-        return;
-      }
+      if (!isChildValid) return;
       const fd = new FormData();
       Object.entries(videoForm).forEach(([k, v]) => fd.append(k, v as string));
       const thumb = videoFormRef.value?.thumbRef?.files?.[0];
@@ -1152,50 +1178,39 @@ async function saveModal() {
       await loadVideos();
     } else if (modal.type === "review") {
       const isChildValid = reviewFormRef.value?.validateForm();
-      if (!isChildValid) {
-        return;
-      }
+      if (!isChildValid) return;
       await api.post(modal.editId ? `/reviews/${modal.editId}` : "/reviews", {
         ...reviewForm,
       });
       await loadReviews();
     } else if (modal.type === "doctor") {
       const isChildValid = doctorFormRef.value?.validateForm();
-      if (!isChildValid) {
-        return;
-      }
+      if (!isChildValid) return;
       const fd = new FormData();
-      fd.append("name", doctorForm.name);
-      fd.append("name_en", doctorForm.name_en);
-      fd.append("title", doctorForm.title);
-      fd.append("title_en", doctorForm.title_en);
-      fd.append("bio", doctorForm.bio);
-      fd.append("bio_en", doctorForm.bio_en);
-      fd.append("sort_order", String(doctorForm.sort_order));
-      fd.append("status", doctorForm.status);
-      fd.append(
-        "education",
-        JSON.stringify(doctorForm.educationText.split("\n").filter(Boolean)),
-      );
-      fd.append(
-        "education_en",
-        JSON.stringify(doctorForm.educationTextEn.split("\n").filter(Boolean)),
-      );
-      fd.append(
-        "specialties",
-        JSON.stringify(
-          doctorForm.specialtiesText
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-        ),
-      );
-      const photo = doctorFormRef.value?.photoRef?.files?.[0];
-      if (photo) {
-        fd.append("photo", photo);
-      } else if (!doctorForm.photo) {
-        fd.append("photo", "");
-      }
+      Object.entries(doctorForm).forEach(([k, v]) => {
+        if (
+          k !== "educationText" &&
+          k !== "educationTextEn" &&
+          k !== "specialtiesText"
+        ) {
+          fd.append(k, v as string);
+        }
+      });
+      const edu = doctorForm.educationText
+        .split("\n")
+        .filter((x: string) => x.trim());
+      const eduEn = doctorForm.educationTextEn
+        .split("\n")
+        .filter((x: string) => x.trim());
+      const spec = doctorForm.specialtiesText
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter(Boolean);
+      fd.append("education", JSON.stringify(edu));
+      fd.append("education_en", JSON.stringify(eduEn));
+      fd.append("specialties", JSON.stringify(spec));
+      const img = doctorFormRef.value?.imageRef?.files?.[0];
+      if (img) fd.append("photo", img);
       await api.post(
         modal.editId ? `/doctors/${modal.editId}` : "/doctors",
         fd,
@@ -1203,46 +1218,28 @@ async function saveModal() {
       await loadDoctors();
     } else if (modal.type === "faq") {
       const isChildValid = faqFormRef.value?.validateForm();
-      if (!isChildValid) {
-        return;
-      }
-      await api.post(modal.editId ? `/faqs/${modal.editId}` : "/faqs", {
-        ...faqForm,
-      });
+      if (!isChildValid) return;
+      await api.post(
+        modal.editId ? `/faqs/${modal.editId}` : `/faqs/${modal.editId}`,
+        { ...faqForm },
+      );
       await loadFaqs();
     }
+
+    // --- จุดที่เพิ่มเข้าเพิ่มเข้าไป ---
+    // 1. สั่งเปิดกล่อง Success Dialog แจ้งเตือนผู้ใช้
+    showSuccess(
+      "บันทึกข้อมูลสำเร็จ",
+      "ข้อมูลในระบบได้รับการปรับปรุงเรียบร้อยแล้ว",
+    );
+
+    // 2. สั่งปิดหน้าต่างฟอร์ม Modal ตัวที่พิมพ์อยู่
     modal.open = false;
-    showSuccess("บันทึกสำเร็จ", "ข้อมูลได้รับการอัปเดตเรียบร้อยแล้ว");
+    // ----------------------------
   } catch (e: any) {
-    modal.error = e.message;
+    modal.error = e.message || "เกิดข้อผิดพลาดในการบันทึก";
   } finally {
     modal.saving = false;
-  }
-}
-
-// ── Change Password
-async function savePassword(payload: any) {
-  pwMsg.value = "";
-  if (payload.newPw !== payload.confirm) {
-    pwMsg.value = "รหัสผ่านใหม่ไม่ตรงกัน";
-    pwMsgType.value = "alert-error";
-    return;
-  }
-  passwordDialog.saving = true;
-  try {
-    await api.changePassword(payload.current, payload.newPw);
-    passwordDialog.open = false;
-    pwMsg.value = "";
-    passwordPageRef.value?.resetForm();
-    showSuccess(
-      "เปลี่ยนรหัสผ่านสำเร็จ",
-      "ระบบได้ปรับปรุงรหัสผ่านใหม่เรียบร้อยแล้ว",
-    );
-  } catch (e: any) {
-    pwMsg.value = e.message;
-    pwMsgType.value = "alert-error";
-  } finally {
-    passwordDialog.saving = false;
   }
 }
 </script>

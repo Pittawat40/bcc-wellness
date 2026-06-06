@@ -16,16 +16,12 @@
     </div>
 
     <template v-else>
-      <!-- ── ข้อมูลการติดต่อ ──────────────────────────────── -->
       <div class="card" style="margin-bottom: 20px">
-        <div
-          class="section-title"
-          style="padding: 24px 24px 0; margin-bottom: 0px"
-        >
-          ข้อมูลการติดต่อ
+        <div class="section-header">
+          <div class="section-title">ข้อมูลการติดต่อ</div>
         </div>
-        <div style="padding: 16px 24px">
-          <div class="grid grid-cols-2 gap-4">
+        <div class="contact-body-pad">
+          <div class="contact-grid">
             <div class="form-group">
               <label class="form-label">เบอร์โทรศัพท์</label>
               <input
@@ -45,7 +41,6 @@
             </div>
           </div>
 
-          <!-- ที่อยู่ 2 ภาษา -->
           <div class="bilingual-block">
             <div class="lang-tabs">
               <button
@@ -83,9 +78,9 @@
             </div>
           </div>
         </div>
-        <div style="padding: 0 24px 24px">
+        <div class="footer-action-bar">
           <button
-            class="btn btn-primary"
+            class="btn btn-primary btn-save-full"
             @click="emit('save-contact', contactInfo)"
           >
             <i class="bi bi-floppy"></i> บันทึกข้อมูล
@@ -93,11 +88,10 @@
         </div>
       </div>
 
-      <!-- ── เวลาทำการ ──────────────────────────────────────── -->
       <div class="card" style="margin-bottom: 20px">
-        <div class="section-header" style="padding: 0 24px">
+        <div class="section-header">
           <div class="section-title">เวลาทำการ</div>
-          <div style="display: flex; gap: 8px; align-items: center">
+          <div class="action">
             <div class="lang-tabs-sm">
               <button
                 :class="['lang-tab-sm', { active: hoursLang === 'th' }]"
@@ -115,7 +109,7 @@
               </button>
             </div>
             <button
-              class="btn btn-ghost btn-sm"
+              class="btn btn-ghost btn-sm btn-add-row"
               @click="
                 businessHours.push({
                   day_label: '',
@@ -129,17 +123,80 @@
             </button>
           </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>{{ hoursLang === "th" ? "วัน" : "Day" }}</th>
-              <th>{{ hoursLang === "th" ? "เวลา" : "Hours" }}</th>
-              <th style="width: 50px"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(h, i) in businessHours" :key="i">
-              <td>
+
+        <div class="table-responsive-wrapper">
+          <table class="desktop-table">
+            <thead>
+              <tr>
+                <th>{{ hoursLang === "th" ? "วัน" : "Day" }}</th>
+                <th>{{ hoursLang === "th" ? "เวลา" : "Hours" }}</th>
+                <th style="width: 50px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(h, i) in businessHours" :key="i">
+                <td>
+                  <input
+                    v-if="hoursLang === 'th'"
+                    class="form-input"
+                    v-model="h.day_label"
+                    placeholder="เช่น จันทร์-ศุกร์"
+                  />
+                  <input
+                    v-else
+                    class="form-input"
+                    v-model="h.day_label_en"
+                    placeholder="e.g. Mon-Fri"
+                  />
+                </td>
+                <td>
+                  <input
+                    v-if="hoursLang === 'th'"
+                    class="form-input"
+                    v-model="h.hours"
+                    placeholder="เช่น 08:00–17:00"
+                  />
+                  <input
+                    v-else
+                    class="form-input"
+                    v-model="h.hours_en"
+                    placeholder="e.g. 08:00–17:00"
+                  />
+                </td>
+                <td style="text-align: right">
+                  <button
+                    class="btn-icon btn-icon-danger"
+                    @click="businessHours.splice(i, 1)"
+                  >
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-cards-list">
+          <div
+            v-for="(h, i) in businessHours"
+            :key="i"
+            class="mobile-responsive-card"
+          >
+            <div class="mobile-card-header">
+              <span class="mobile-item-number">แถวที่ {{ i + 1 }}</span>
+              <button
+                class="btn-icon btn-icon-danger"
+                @click="businessHours.splice(i, 1)"
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+
+            <div class="mobile-card-body">
+              <div class="form-group">
+                <label class="form-label">{{
+                  hoursLang === "th" ? "วัน" : "Day"
+                }}</label>
                 <input
                   v-if="hoursLang === 'th'"
                   class="form-input"
@@ -152,8 +209,12 @@
                   v-model="h.day_label_en"
                   placeholder="e.g. Mon-Fri"
                 />
-              </td>
-              <td>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">{{
+                  hoursLang === "th" ? "เวลา" : "Hours"
+                }}</label>
                 <input
                   v-if="hoursLang === 'th'"
                   class="form-input"
@@ -166,21 +227,14 @@
                   v-model="h.hours_en"
                   placeholder="e.g. 08:00–17:00"
                 />
-              </td>
-              <td style="text-align: right">
-                <button
-                  class="btn-icon btn-icon-danger"
-                  @click="businessHours.splice(i, 1)"
-                >
-                  <i class="bi bi-trash3"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="padding: 14px 24px 24px">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-action-bar">
           <button
-            class="btn btn-primary"
+            class="btn btn-primary btn-save-full"
             @click="emit('save-hours', businessHours)"
           >
             <i class="bi bi-floppy"></i> บันทึกข้อมูล
@@ -188,12 +242,11 @@
         </div>
       </div>
 
-      <!-- ── Social Media ───────────────────────────────────── -->
       <div class="card">
-        <div class="section-header" style="padding: 0 24px">
+        <div class="section-header">
           <div class="section-title">Social Media</div>
           <button
-            class="btn btn-ghost btn-sm"
+            class="btn btn-ghost btn-sm btn-add-row"
             @click="
               socialItems.push({
                 platform: '',
@@ -208,58 +261,143 @@
             + เพิ่มรายการ
           </button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 80px; text-align: center">ลำดับ</th>
-              <th>Platform</th>
-              <th>URL</th>
-              <th style="width: 120px; text-align: center">สถานะ</th>
-              <th style="width: 50px"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(s, i) in socialItems" :key="s.platform || i">
-              <td style="text-align: center; vertical-align: middle">
-                <div class="order-wrapper">
-                  <button
-                    class="btn-order"
-                    type="button"
-                    :disabled="i === 0"
-                    @click="emit('social-reorder', i, -1)"
+
+        <div class="table-responsive-wrapper">
+          <table class="desktop-table">
+            <thead>
+              <tr>
+                <th style="width: 80px; text-align: center">ลำดับ</th>
+                <th>Platform</th>
+                <th>URL</th>
+                <th style="width: 120px; text-align: center">สถานะ</th>
+                <th style="width: 50px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(s, i) in socialItems" :key="s.platform || i">
+                <td style="text-align: center; vertical-align: middle">
+                  <div class="order-wrapper">
+                    <button
+                      class="btn-order"
+                      type="button"
+                      :disabled="i === 0"
+                      @click="emit('social-reorder', i, -1)"
+                    >
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button
+                      class="btn-order"
+                      type="button"
+                      :disabled="i === socialItems.length - 1"
+                      @click="emit('social-reorder', i, 1)"
+                    >
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <input
+                    class="form-input"
+                    v-model="s.platform"
+                    placeholder="เช่น facebook"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="form-input"
+                    v-model="s.url"
+                    type="url"
+                    placeholder="https://..."
+                  />
+                </td>
+                <td style="text-align: center; vertical-align: middle">
+                  <label
+                    class="switch-container"
+                    :title="s.is_active ? 'แสดง' : 'ปิดอยู่'"
                   >
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
+                    <input
+                      type="checkbox"
+                      v-model="s.is_active"
+                      :true-value="1"
+                      :false-value="0"
+                      @change="emit('social-toggle', s)"
+                    />
+                    <span class="custom-slider">
+                      <span class="text-on">แสดง</span>
+                      <span class="text-off">ปิด</span>
+                    </span>
+                  </label>
+                  <span
+                    v-if="s._updating"
+                    class="updating-dot"
+                    title="กำลังบันทึก..."
+                  ></span>
+                </td>
+                <td style="text-align: right; vertical-align: middle">
                   <button
-                    class="btn-order"
-                    type="button"
-                    :disabled="i === socialItems.length - 1"
-                    @click="emit('social-reorder', i, 1)"
+                    class="btn-icon btn-icon-danger"
+                    @click="socialItems.splice(i, 1)"
                   >
-                    <i class="bi bi-chevron-down"></i>
+                    <i class="bi bi-trash3"></i>
                   </button>
-                </div>
-              </td>
-              <td>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-cards-list">
+          <div
+            v-for="(s, i) in socialItems"
+            :key="s.platform || i"
+            class="mobile-responsive-card"
+          >
+            <div class="mobile-card-header">
+              <span class="mobile-item-number">รายการที่ {{ i + 1 }}</span>
+              <div class="mobile-order-actions">
+                <button
+                  class="btn-order"
+                  type="button"
+                  :disabled="i === 0"
+                  @click="emit('social-reorder', i, -1)"
+                >
+                  <i class="bi bi-chevron-up"></i>
+                </button>
+                <button
+                  class="btn-order"
+                  type="button"
+                  :disabled="i === socialItems.length - 1"
+                  @click="emit('social-reorder', i, 1)"
+                >
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="mobile-card-body">
+              <div class="form-group">
+                <label class="form-label">Platform</label>
                 <input
                   class="form-input"
                   v-model="s.platform"
                   placeholder="เช่น facebook"
                 />
-              </td>
-              <td>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">URL</label>
                 <input
                   class="form-input"
                   v-model="s.url"
                   type="url"
                   placeholder="https://..."
                 />
-              </td>
-              <td style="text-align: center; vertical-align: middle">
-                <label
-                  class="switch-container"
-                  :title="s.is_active ? 'แสดง' : 'ปิดอยู่'"
-                >
+              </div>
+            </div>
+
+            <div class="mobile-card-footer">
+              <div class="status-toggle-box">
+                <label class="switch-container">
                   <input
                     type="checkbox"
                     v-model="s.is_active"
@@ -272,33 +410,21 @@
                     <span class="text-off">ปิด</span>
                   </span>
                 </label>
-                <span
-                  v-if="s._updating"
-                  class="updating-dot"
-                  title="กำลังบันทึก..."
-                ></span>
-              </td>
-              <td style="text-align: right; vertical-align: middle">
-                <button
-                  class="btn-icon btn-icon-danger"
-                  @click="socialItems.splice(i, 1)"
-                >
-                  <i class="bi bi-trash3"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div
-          style="
-            padding: 14px 24px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          "
-        >
+                <span v-if="s._updating" class="updating-dot"></span>
+              </div>
+              <button
+                class="btn-icon btn-icon-danger mobile-btn-delete"
+                @click="socialItems.splice(i, 1)"
+              >
+                <i class="bi bi-trash3"></i> ลบรายการ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-action-bar">
           <button
-            class="btn btn-primary"
+            class="btn btn-primary btn-save-full"
             @click="emit('save-social', socialItems)"
           >
             <i class="bi bi-floppy"></i> บันทึกข้อมูล
@@ -350,14 +476,39 @@ const emailItem = computed(
 </script>
 
 <style scoped>
-.bilingual-block {
-  margin-top: 8px;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid #f3f4f6;
 }
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.contact-body-pad {
+  padding: 20px 24px 24px;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bilingual-block {
+  margin-top: 16px;
+}
+
 .lang-tabs {
   display: flex;
   gap: 4px;
   border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 .lang-tab {
   padding: 7px 18px;
@@ -464,7 +615,7 @@ const emailItem = computed(
   font-family: sans-serif;
 }
 .text-on {
-  color: #3f6440;
+  color: #065f46;
   opacity: 0;
 }
 .text-off {
@@ -484,8 +635,8 @@ const emailItem = computed(
   z-index: 2;
 }
 input:checked + .custom-slider {
-  background-color: #c9d8c6;
-  border-color: #c9d8c6;
+  background-color: #d1fae5;
+  border-color: #d1fae5;
 }
 input:checked + .custom-slider:before {
   transform: translateX(32px);
@@ -539,5 +690,162 @@ input:checked + .custom-slider .text-off {
 
 table td {
   vertical-align: middle;
+}
+
+.action {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.table-responsive-wrapper {
+  display: block;
+}
+
+.desktop-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mobile-cards-list {
+  display: none;
+}
+
+.footer-action-bar {
+  padding: 20px 24px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.btn-save-full {
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .action {
+    width: 100%;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+  }
+
+  .btn-add-row {
+    width: auto;
+  }
+
+  .contact-body-pad {
+    padding: 16px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .table-responsive-wrapper {
+    display: none;
+  }
+
+  .mobile-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .mobile-responsive-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 8px;
+  }
+
+  .mobile-item-number {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .mobile-order-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mobile-card-body .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobile-card-body .form-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .mobile-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+
+  .status-toggle-box {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-btn-delete {
+    width: auto;
+    height: auto;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    gap: 4px;
+    border-radius: 8px;
+  }
+
+  .footer-action-bar {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-save-full {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .saving-hint {
+    justify-content: center;
+  }
 }
 </style>

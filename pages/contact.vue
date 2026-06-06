@@ -246,8 +246,8 @@
                         </svg>
                         {{
                           lang === "th"
-                            ? "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง (ตัวเลข 9-10 หลัก)"
-                            : "Please enter a valid phone number (9–10 digits)"
+                            ? "กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง"
+                            : "Please enter a valid phone number"
                         }}
                       </p>
                     </div>
@@ -528,7 +528,7 @@
                   class="absolute inset-0 rounded-full bg-brand-100 animate-ping opacity-30"
                 />
                 <div
-                  class="relative w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center shadow-lg shadow-brand-200"
+                  class="relative w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center"
                 >
                   <svg
                     class="w-9 h-9 text-white"
@@ -607,7 +607,7 @@
               <!-- CTA button -->
               <button
                 @click="closeDialog"
-                class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm hover:from-brand-600 hover:to-brand-700 transition-all duration-200 shadow-md shadow-brand-200 hover:shadow-lg hover:shadow-brand-300 active:scale-[0.98]"
+                class="w-full py-3.5 rounded-2xl bg-gradient-to-r bg-brand-600 text-white font-semibold text-sm transition-all duration-200 active:scale-[0.98]"
               >
                 {{ lang === "th" ? "รับทราบ" : "Got it, thanks!" }}
               </button>
@@ -809,10 +809,8 @@ const errors = reactive({
 
 function validate(): boolean {
   errors.name = !form.name.trim();
-
-  const digitsOnly = form.phone.replace(/[\s\-()]/g, "");
-  errors.phone = !digitsOnly || !/^\d{9,10}$/.test(digitsOnly);
-
+  const digitsOnly = form.phone.replace(/[\s\-()+]/g, "");
+  errors.phone = !digitsOnly || !/^\d{9,15}$/.test(digitsOnly);
   errors.email =
     !!form.email.trim() &&
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
@@ -822,6 +820,26 @@ function validate(): boolean {
 }
 
 // Clear errors as user fixes them
+watch(
+  () => form.phone,
+  (newValue) => {
+    if (!newValue) return;
+
+    const hasPlus = newValue.startsWith("+") ? "+" : "";
+    let digits = newValue.replace(/\D/g, "").slice(0, 12);
+
+    if (digits.length <= 3) {
+      form.phone = `${hasPlus}${digits}`;
+    } else if (digits.length <= 6) {
+      form.phone = `${hasPlus}${digits.slice(0, 3)}-${digits.slice(3)}`;
+    } else if (digits.length <= 10) {
+      form.phone = `${hasPlus}${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else {
+      // สำหรับเบอร์ต่างประเทศที่ยาว 11-12 หลัก จะหั่นเพิ่มอีกหนึ่งกรุ๊ปท้าย
+      form.phone = `${hasPlus}${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}-${digits.slice(10)}`;
+    }
+  },
+);
 watch(
   () => form.name,
   (v) => {

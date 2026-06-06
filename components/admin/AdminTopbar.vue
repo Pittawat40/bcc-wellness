@@ -28,6 +28,7 @@ const pageNames: Record<string, string> = {
   appointments: "นัดหมาย",
   articles: "บทความ",
   stories: "ความสำเร็จ",
+  gallery: "แกลเลอรี่",
   videos: "วิดีโอ",
   reviews: "รีวิว",
   doctors: "ทีมแพทย์",

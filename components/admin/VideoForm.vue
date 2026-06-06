@@ -27,7 +27,7 @@
         <input
           class="form-input w-full"
           :class="{
-            'border-red-500 focus:border-red-500 focus:ring-red-200':
+            '!border-red-500 focus:!border-red-500 focus:!ring-red-200':
               errors.title,
           }"
           v-model="form.title"
@@ -75,7 +75,8 @@
       <input
         class="form-input w-full"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-200': errors.url,
+          '!border-red-500 focus:!border-red-500 focus:!ring-red-200':
+            errors.title,
         }"
         v-model="form.url"
         type="url"
@@ -151,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, nextTick } from "vue";
+import { ref, reactive, nextTick, watch } from "vue";
 
 const lang = ref<"th" | "en">("th");
 const form = defineModel<{
@@ -169,8 +170,21 @@ const errors = reactive({
   thumb: "",
 });
 
+const props = defineProps<{
+  currentThumb?: string;
+}>();
+
+const thumbUrl = ref<string | null>(null); // ← declare ก่อน
 const thumbRef = ref<HTMLInputElement>();
-const thumbUrl = ref<string | null>(null);
+
+watch(
+  () => props.currentThumb,
+  (val) => {
+    thumbUrl.value = val || null; // ✅ มีแล้ว
+    if (thumbRef.value) thumbRef.value.value = "";
+  },
+  { immediate: true },
+);
 
 const triggerUpload = () => thumbRef.value?.click();
 

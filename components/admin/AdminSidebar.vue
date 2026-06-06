@@ -5,6 +5,12 @@
         <h1>BCC IVF</h1>
         <p>Wellness Admin</p>
       </div>
+      <button
+        class="close-sidebar-btn"
+        @click="emit('update:modelValue', false)"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
 
     <div class="nav-section-label">ภาพรวม</div>
@@ -46,7 +52,7 @@
           :key="item.page"
           class="nav-item sub-item"
           :class="{ active: currentPage === item.page }"
-          @click="emit('navigate', item.page)"
+          @click="handleNavigate(item.page)"
         >
           <i :class="['bi', item.icon, 'nav-icon']"></i>
           <span class="nav-label">{{ item.label }}</span>
@@ -77,6 +83,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 const props = withDefaults(
   defineProps<{
@@ -91,9 +98,10 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: "update:modelValue", v: boolean): void;
-  (e: "navigate", page: string): void;
   (e: "logout"): void;
 }>();
+
+const router = useRouter();
 
 const contentItems = [
   { page: "gallery", icon: "bi-images", label: "แกลเลอรี่" },
@@ -101,6 +109,7 @@ const contentItems = [
   { page: "articles", icon: "bi-file-earmark-text", label: "บทความ" },
   { page: "videos", icon: "bi-camera-video", label: "วิดีโอ" },
   { page: "reviews", icon: "bi-star", label: "รีวิว" },
+  { page: "faq", icon: "bi-patch-question", label: "คำถามที่พบบ่อย" },
 ];
 
 const isSubItemActive = computed(() =>
@@ -109,8 +118,24 @@ const isSubItemActive = computed(() =>
 const contentExpanded = ref(isSubItemActive.value);
 
 const handleNavigate = (page: string) => {
-  contentExpanded.value = false;
+  if (page === "password") {
+    emit("update:modelValue", false);
+    emit("navigate", page);
+    return;
+  }
+
+  const isContentPage = contentItems.some((item) => item.page === page);
+  if (!isContentPage) {
+    contentExpanded.value = false;
+  }
+
+  emit("update:modelValue", false);
   emit("navigate", page);
+
+  router.push({
+    path: "/dashboard",
+    query: { page: page },
+  });
 };
 
 onMounted(() => {
@@ -119,7 +144,6 @@ onMounted(() => {
 
 const otherItems = [
   { page: "doctors", icon: "bi-person", label: "ทีมแพทย์" },
-  { page: "faq", icon: "bi-patch-question", label: "คำถามที่พบบ่อย" },
   { page: "contact", icon: "bi-telephone", label: "ข้อมูลติดต่อ" },
   { page: "password", icon: "bi-shield-lock", label: "เปลี่ยนรหัสผ่าน" },
 ];
@@ -192,9 +216,9 @@ const otherItems = [
   border-radius: 2px;
 }
 .sidebar-logo {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
   padding: 28px 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -209,6 +233,24 @@ const otherItems = [
   color: rgba(255, 255, 255, 0.35);
   margin: 2px 0 0;
 }
+
+.close-sidebar-btn {
+  display: none;
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+.close-sidebar-btn:hover {
+  color: #ffffff;
+}
+
 .nav-section-label {
   padding: 20px 20px 8px;
   font-size: 0.62rem;
@@ -310,12 +352,16 @@ const otherItems = [
 .logout-item:hover {
   background: rgba(248, 113, 113, 0.1) !important;
 }
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
   }
   .sidebar.open {
     transform: translateX(0);
+  }
+  .close-sidebar-btn {
+    display: inline-block;
   }
 }
 </style>

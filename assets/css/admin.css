@@ -280,7 +280,6 @@ select.form-input::-ms-expand {
   border: 1px solid var(--border);
 }
 
-/* ปรับสีสไตล์ Badge ให้เข้ากับกลุ่มสีหลักธรรมชาติ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -298,8 +297,8 @@ select.form-input::-ms-expand {
   background: currentColor;
 }
 .badge-green {
-  background: #e4ece3; /* sage.100 */
-  color: #3f6440; /* sage.600 */
+  background: #d1fae5;
+  color: #065f46;
 }
 .badge-amber {
   background: #f9f2e7; /* warm.100 */
@@ -385,6 +384,7 @@ select.form-input::-ms-expand {
   align-items: center;
   justify-content: space-between;
   margin: 24px 0 16px;
+  padding: 0 24px;
 }
 
 .loading-state {
@@ -561,7 +561,6 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
   .page-header {
-    flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
