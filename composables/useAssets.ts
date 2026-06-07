@@ -1,5 +1,5 @@
 export function useAssets() {
-  const host = import.meta.env.VITE_API_URL || "http://localhost:4002";
+  const host = import.meta.env.API_BASE || "http://localhost:4002";
 
   const getFullUrl = (path: string | null | undefined) => {
     // ถ้าไม่มี path หรือเป็นค่าว่าง

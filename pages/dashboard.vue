@@ -541,8 +541,8 @@ async function loadPageData(targetPage: string) {
   const actualPage = targetPage === "social" ? "contact" : targetPage;
   loading.value = true;
   try {
-    if (actualPage === "dashboard") await loadDashboard();
-    else if (actualPage === "articles")
+    // if (actualPage === "dashboard")
+    if (actualPage === "articles")
       await Promise.all([loadArticles(), loadArticleCategories()]);
     else if (actualPage === "videos") await loadVideos();
     else if (actualPage === "stories") await loadStories();
@@ -564,76 +564,6 @@ async function loadPageData(targetPage: string) {
   }
 }
 
-async function loadDashboard() {
-  const [a, v, r, d, f, st, appt, g] = await Promise.all([
-    api.getArticles({ limit: 1 }),
-    api.getVideos({ limit: 1 }),
-    api.getReviews({ limit: 1 }),
-    api.getDoctors({ limit: 1 }),
-    api.getFaqs({ limit: 1 }),
-    api.get("/stories/admin/all"),
-    api.getAppointments({ limit: 1 }),
-    api.get("/gallery/admin/all"),
-  ]);
-  dashStats.value = [
-    {
-      label: "บทความ",
-      value: a.total,
-      icon: "bi-file-earmark-text",
-      color: "#c084b0",
-      bg: "rgba(192,132,176,0.12)",
-    },
-    {
-      label: "เรื่องราว",
-      value: st.length,
-      icon: "bi-heart",
-      color: "#f43f5e",
-      bg: "rgba(244,63,94,0.12)",
-    },
-    {
-      label: "วิดีโอ",
-      value: v.total,
-      icon: "bi-camera-video",
-      color: "#60a5fa",
-      bg: "rgba(96,165,250,0.12)",
-    },
-    {
-      label: "รีวิว",
-      value: r.total,
-      icon: "bi-star",
-      color: "#fbbf24",
-      bg: "rgba(251,191,36,0.12)",
-    },
-    {
-      label: "ทีมแพทย์",
-      value: d.total,
-      icon: "bi-person-badge",
-      color: "#34d399",
-      bg: "rgba(52,211,153,0.12)",
-    },
-    {
-      label: "FAQ",
-      value: f.total,
-      icon: "bi-patch-question",
-      color: "#a78bfa",
-      bg: "rgba(167,139,250,0.12)",
-    },
-    {
-      label: "นัดหมาย",
-      value: appt.total,
-      icon: "bi-calendar2-check",
-      color: "#f472b6",
-      bg: "rgba(244,114,182,0.12)",
-    },
-    {
-      label: "แกลเลอรี่",
-      value: (g || []).length,
-      icon: "bi-images",
-      color: "#38bdf8",
-      bg: "rgba(56,189,248,0.12)",
-    },
-  ];
-}
 async function loadArticles(params = {}) {
   const d = await api.getArticles({ limit: 20, offset: 0, ...params });
   articles.value = d.articles || [];
