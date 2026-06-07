@@ -57,17 +57,6 @@ const handleScroll = () => {
 //   window.removeEventListener("removeEventListener", handleScroll);
 // });
 
-// ── Track page view ──────────────────────────────────────────
-onMounted(async () => {
-  try {
-    await $fetch("/api/dashboard/track", {
-      method: "POST",
-      baseURL: import.meta.env.API_BASE || "http://localhost:4002",
-      body: { path: "/" },
-    });
-  } catch {}
-});
-
 useSeoMeta({
   title: computed(() =>
     lang.value === "th"

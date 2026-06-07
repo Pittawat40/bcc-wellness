@@ -38,14 +38,12 @@
       </div>
     </div>
 
-    <!-- Legend -->
     <div class="legend">
       <span class="legend-item">
         <span class="legend-dot dot-done"></span> นัดหมายแล้ว
       </span>
     </div>
 
-    <!-- Month View -->
     <div v-if="viewMode === 'month'" class="calendar-wrap">
       <div class="cal-grid">
         <div v-for="d in dayHeaders" :key="d" class="cal-header-cell">
@@ -61,6 +59,8 @@
             'cal-cell--has-appt': cell.appointments.length > 0,
           }"
           @click="cell.appointments.length > 0 && openDayDetail(cell)"
+          @dragover.prevent
+          @drop="handleDrop($event, cell.date)"
         >
           <span class="cal-date">{{ cell.day }}</span>
           <div class="cal-events">
@@ -69,6 +69,8 @@
               :key="a.id"
               class="cal-event"
               :class="`cal-event--${a.status}`"
+              draggable="true"
+              @dragstart="handleDragStart($event, a)"
               @click.stop="openDetail(a)"
               :title="a.name"
             >
@@ -86,7 +88,6 @@
       </div>
     </div>
 
-    <!-- Week View -->
     <div v-else class="week-wrap">
       <div class="week-grid">
         <div
@@ -94,6 +95,8 @@
           :key="day.key"
           class="week-col"
           :class="{ 'week-col--today': day.isToday }"
+          @dragover.prevent
+          @drop="handleDrop($event, day.date)"
         >
           <div class="week-col-header">
             <span class="week-day-name">{{ day.dayName }}</span>
@@ -112,6 +115,8 @@
               :key="a.id"
               class="week-event"
               :class="`week-event--${a.status}`"
+              draggable="true"
+              @dragstart="handleDragStart($event, a)"
               @click="openDetail(a)"
             >
               <div class="week-event-name">{{ a.name }}</div>
@@ -124,7 +129,6 @@
       </div>
     </div>
 
-    <!-- Day Detail Modal -->
     <Teleport to="body">
       <Transition name="modal">
         <div
@@ -145,6 +149,11 @@
                 :key="a.id"
                 class="day-appt-item"
                 :class="`day-appt-item--${a.status}`"
+                draggable="true"
+                @dragstart="
+                  handleDragStart($event, a);
+                  dayDetail = null;
+                "
                 @click="
                   openDetail(a);
                   dayDetail = null;
@@ -173,7 +182,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Appointment Detail Modal -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="viewing" class="modal-overlay" @click.self="viewing = null">
@@ -248,6 +256,76 @@
         </div>
       </Transition>
     </Teleport>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="dropConfirmData"
+          class="modal-overlay"
+          @click.self="dropConfirmData = null"
+        >
+          <div class="modal modal--confirm">
+            <div class="modal-header">
+              <h3>ยืนยันการย้ายวันนัดหมาย</h3>
+              <button class="close-btn" @click="dropConfirmData = null">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="confirm-info-box">
+                <p class="text-sm text-slate-600 mb-1">
+                  คุณกำลังย้ายนัดหมายของ:
+                </p>
+                <p class="font-bold text-slate-800 text-base mb-3">
+                  {{ dropConfirmData.apptName }}
+                </p>
+                <div
+                  class="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200"
+                >
+                  <i class="bi bi-calendar-event"></i>
+                  <span
+                    >ไปยังวันที่:
+                    <strong>{{
+                      formatThaiDate(dropConfirmData.targetDateStr)
+                    }}</strong></span
+                  >
+                </div>
+              </div>
+
+              <div class="time-picker-wrapper mt-4">
+                <label
+                  class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5"
+                  >กรุณาระบุเวลานัดหมาย</label
+                >
+                <div class="relative">
+                  <i
+                    class="bi bi-clock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  ></i>
+                  <input
+                    type="time"
+                    v-model="dropConfirmTime"
+                    class="form-input pl-10 text-base"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" @click="dropConfirmData = null">
+                ยกเลิก
+              </button>
+              <button
+                class="btn btn-primary"
+                @click="confirmDropSave"
+                :disabled="!dropConfirmTime"
+              >
+                ยืนยันการย้าย
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -278,6 +356,16 @@ const noteEdit = ref("");
 const pendingStatus = ref("");
 const dayDetail = ref<{ dateLabel: string; appointments: any[] } | null>(null);
 
+// State ควบคุมโมดอลยืนยันหลังลากวาง
+const dropConfirmData = ref<{
+  apptId: number;
+  apptStatus: string;
+  apptNote: string;
+  apptName: string;
+  targetDateStr: string;
+} | null>(null);
+const dropConfirmTime = ref("09:00"); // เวลาเริ่มต้นดีฟอลต์
+
 const filteredItems = computed(() => {
   return props.items.filter((item) => item.status === "done");
 });
@@ -286,6 +374,68 @@ watch(viewing, (v) => {
   noteEdit.value = v?.note || "";
   pendingStatus.value = v?.status || "";
 });
+
+// ─── Drag and Drop Handlers ──────────────────────────────────────────
+const handleDragStart = (event: DragEvent, appt: any) => {
+  if (event.dataTransfer) {
+    event.dataTransfer.setData("text/plain", JSON.stringify(appt));
+    event.dataTransfer.effectAllowed = "move";
+  }
+};
+
+const handleDrop = (event: DragEvent, targetDate: Date) => {
+  const dataStr = event.dataTransfer?.getData("text/plain");
+  if (!dataStr) return;
+
+  try {
+    const appt = JSON.parse(dataStr);
+
+    const originalDate = appt.appointment_date
+      ? new Date(appt.appointment_date.split(" ")[0])
+      : null;
+    if (originalDate && isSameDay(originalDate, targetDate)) {
+      return;
+    }
+
+    const offset = targetDate.getTimezoneOffset();
+    const localTargetDate = new Date(targetDate.getTime() - offset * 60 * 1000);
+    const targetDateStr = localTargetDate.toISOString().split("T")[0];
+
+    if (appt.appointment_date && appt.appointment_date.includes("T")) {
+      const timePart = appt.appointment_date.split("T")[1];
+      dropConfirmTime.value = timePart.substring(0, 5);
+    } else {
+      dropConfirmTime.value = "09:00";
+    }
+
+    dropConfirmData.value = {
+      apptId: appt.id,
+      apptStatus: appt.status,
+      apptNote: appt.note || "",
+      apptName: appt.name,
+      targetDateStr: targetDateStr,
+    };
+  } catch (err) {
+    console.error("Failed to process drag drop data:", err);
+  }
+};
+
+const confirmDropSave = () => {
+  if (!dropConfirmData.value || !dropConfirmTime.value) return;
+
+  const finalAppointmentDateTime = `${dropConfirmData.value.targetDateStr} ${dropConfirmTime.value}`;
+
+  emit(
+    "save",
+    dropConfirmData.value.apptId,
+    dropConfirmData.value.apptStatus,
+    dropConfirmData.value.apptNote,
+    finalAppointmentDateTime,
+  );
+
+  dropConfirmData.value = null;
+};
+// ───────────────────────────────────────────────────────────────────
 
 const formatPhone = (phone: any) => {
   if (!phone) return "";
@@ -322,13 +472,19 @@ const dayHeadersFull = [
   "อาทิตย์",
 ];
 
+const formatThaiDate = (dateStr: string) => {
+  if (!dateStr) return "–";
+  const d = new Date(dateStr.split(" ")[0]); // รองรับทั้ง YYYY-MM-DD และตัวที่มีเวลาพ่วงมา
+  return `${d.getDate()} ${thMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+};
+
 const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
 const getApptDate = (a: any) =>
-  a.appointment_date ? new Date(a.appointment_date) : null;
+  a.appointment_date ? new Date(a.appointment_date.split(" ")[0]) : null;
 
 const periodLabel = computed(() => {
   if (viewMode.value === "month") {
@@ -456,12 +612,54 @@ function saveAll() {
   const status = pendingStatus.value;
   const note = noteEdit.value;
   const appointmentDate = viewing.value.appointment_date || "";
-  viewing.value = null; // null หลังเก็บค่าแล้ว
+  viewing.value = null;
   emit("save", id, status, note, appointmentDate);
 }
 </script>
 
 <style scoped>
+/* ─── เพิ่มสไตล์ส่วนกล่องกรอกเวลาในโมดอลยืนยันการลากวาง ─── */
+.modal--confirm {
+  max-width: 400px !important;
+}
+.confirm-info-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 10px;
+}
+.pl-10 {
+  padding-left: 2.5rem !important;
+}
+.relative i.bi-clock {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.4);
+}
+
+.cal-event[draggable="true"],
+.week-event[draggable="true"],
+.day-appt-item[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+.cal-event:active,
+.week-event:active,
+.day-appt-item:active {
+  cursor: grabbing;
+  opacity: 0.5;
+}
+.cal-cell[dragover],
+.week-col[dragover] {
+  background-color: #fffbeb !important; /* เปลี่ยนไฮไลท์สีทองวอร์มๆ ตอนพร้อม Drop */
+  outline: 2px dashed #d97706;
+  outline-offset: -2px;
+}
+
+/* (สไตล์เดิมคงอยู่เหมือนเดิมทุกประการ...) */
 .header-controls {
   display: flex;
   align-items: center;
@@ -470,14 +668,12 @@ function saveAll() {
   flex-wrap: wrap;
   width: 100%;
 }
-
 .header-controls-left {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
 }
-
 .nav-controls {
   display: flex;
   align-items: center;
@@ -488,7 +684,6 @@ function saveAll() {
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-
 .nav-btn {
   width: 34px;
   height: 34px;
@@ -503,12 +698,10 @@ function saveAll() {
   font-size: 0.875rem;
   transition: background 0.15s;
 }
-
 .nav-btn:hover {
   background: #f3f4f6;
   color: #111827;
 }
-
 .today-btn {
   padding: 0 14px;
   height: 32px;
@@ -524,19 +717,16 @@ function saveAll() {
   justify-content: center;
   transition: background 0.15s;
 }
-
 .today-btn:hover {
   background: #f3f4f6;
   color: #111827;
 }
-
 .period-label {
   font-size: 1.1rem;
   font-weight: 700;
   color: #1f2937;
   letter-spacing: -0.01em;
 }
-
 .view-toggle {
   display: flex;
   background: #f3f4f6;
@@ -545,7 +735,6 @@ function saveAll() {
   border-radius: 12px;
   gap: 4px;
 }
-
 .view-btn {
   padding: 6px 16px;
   border-radius: 8px;
@@ -560,11 +749,9 @@ function saveAll() {
   gap: 6px;
   transition: all 0.2s ease;
 }
-
 .view-btn i {
   font-size: 0.95rem;
 }
-
 .view-btn.active {
   background: #ffffff;
   color: #111827;
@@ -573,11 +760,9 @@ function saveAll() {
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
-
 .calendar-page {
   padding: 4px 0;
 }
-
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -586,27 +771,23 @@ function saveAll() {
   gap: 12px;
   margin-bottom: 16px;
 }
-
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: #111827;
   margin: 0 0 4px 0;
 }
-
 .page-subtitle {
   font-size: 0.875rem;
   color: #6b7280;
   margin: 0;
 }
-
 .legend {
   display: flex;
   gap: 16px;
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
-
 .legend-item {
   display: flex;
   align-items: center;
@@ -614,33 +795,28 @@ function saveAll() {
   font-size: 0.8rem;
   color: #6b7280;
 }
-
 .legend-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-
 .dot-done {
   background: #10b981;
 }
 .dot-cancelled {
   background: #ef4444;
 }
-
 .calendar-wrap {
   background: #fff;
   border-radius: 14px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
 }
-
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-
 .cal-header-cell {
   background: #f9fafb;
   text-align: center;
@@ -652,7 +828,6 @@ function saveAll() {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 .cal-cell {
   min-height: 110px;
   padding: 6px;
@@ -662,7 +837,6 @@ function saveAll() {
   position: relative;
   transition: background 0.12s;
 }
-
 .cal-cell:nth-child(7n) {
   border-right: none;
 }
@@ -678,7 +852,6 @@ function saveAll() {
 .cal-cell--today {
   background: #dce4fb;
 }
-
 .cal-date {
   display: inline-flex;
   align-items: center;
@@ -691,7 +864,6 @@ function saveAll() {
   color: #374151;
   margin-bottom: 4px;
 }
-
 .cal-cell--other .cal-date {
   color: #c1c8d4;
   font-weight: 400;
@@ -701,13 +873,11 @@ function saveAll() {
   color: #fff;
   font-weight: 700;
 }
-
 .cal-events {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .cal-event {
   border-radius: 5px;
   padding: 2px 6px;
@@ -720,7 +890,6 @@ function saveAll() {
   transition: opacity 0.12s;
   max-width: 100%;
 }
-
 .cal-event:hover {
   opacity: 0.8;
 }
@@ -732,14 +901,12 @@ function saveAll() {
   background: #fee2e2;
   color: #991b1b;
 }
-
 .cal-event-name {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .cal-more {
   font-size: 0.7rem;
   color: #6b7280;
@@ -747,48 +914,40 @@ function saveAll() {
   padding: 1px 4px;
   cursor: pointer;
 }
-
 .cal-more:hover {
   color: #4f46e5;
 }
-
 .week-wrap {
   background: #fff;
   border-radius: 14px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
 }
-
 .week-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   min-height: 400px;
 }
-
 .week-col {
   border-right: 1px solid #f3f4f6;
   display: flex;
   flex-direction: column;
 }
-
 .week-col:last-child {
   border-right: none;
 }
 .week-col--today {
   background: #f0f4ff;
 }
-
 .week-col-header {
   padding: 10px 8px 8px;
   text-align: center;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
 }
-
 .week-col--today .week-col-header {
   background: #eef1ff;
 }
-
 .week-day-name {
   display: block;
   font-size: 0.72rem;
@@ -798,7 +957,6 @@ function saveAll() {
   letter-spacing: 0.05em;
   margin-bottom: 4px;
 }
-
 .week-day-num {
   display: inline-flex;
   align-items: center;
@@ -810,12 +968,10 @@ function saveAll() {
   font-weight: 700;
   color: #374151;
 }
-
 .week-day-num--today {
   background: #4f46e5;
   color: #fff;
 }
-
 .week-col-body {
   flex: 1;
   padding: 8px;
@@ -823,7 +979,6 @@ function saveAll() {
   flex-direction: column;
   gap: 6px;
 }
-
 .week-empty {
   flex: 1;
   display: flex;
@@ -832,7 +987,6 @@ function saveAll() {
   color: #d1d5db;
   font-size: 1.2rem;
 }
-
 .week-event {
   border-radius: 8px;
   padding: 7px 9px;
@@ -841,7 +995,6 @@ function saveAll() {
     opacity 0.12s,
     transform 0.12s;
 }
-
 .week-event:hover {
   opacity: 0.85;
   transform: translateY(-1px);
@@ -854,7 +1007,6 @@ function saveAll() {
   background: #fee2e2;
   border-left: 3px solid #ef4444;
 }
-
 .week-event-name {
   font-size: 0.78rem;
   font-weight: 700;
@@ -863,7 +1015,6 @@ function saveAll() {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .week-event-meta {
   font-size: 0.7rem;
   color: #6b7280;
@@ -872,7 +1023,6 @@ function saveAll() {
   align-items: center;
   gap: 4px;
 }
-
 .day-appt-item {
   display: flex;
   align-items: center;
@@ -884,7 +1034,6 @@ function saveAll() {
   transition: opacity 0.12s;
   border: 1px solid #f3f4f6;
 }
-
 .day-appt-item:hover {
   opacity: 0.8;
 }
@@ -894,32 +1043,27 @@ function saveAll() {
 .day-appt-item--cancelled {
   background: #fff1f1;
 }
-
 .day-appt-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .day-appt-status-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-
 .day-appt-name {
   font-weight: 700;
   color: #111827;
   font-size: 0.875rem;
 }
-
 .day-appt-meta {
   font-size: 0.78rem;
   color: #6b7280;
   margin-top: 2px;
 }
-
 .day-appt-badge {
   padding: 3px 10px;
   border-radius: 9999px;
@@ -927,7 +1071,6 @@ function saveAll() {
   font-weight: 700;
   flex-shrink: 0;
 }
-
 .badge-done {
   background: #d1fae5;
   color: #065f46;
@@ -936,7 +1079,6 @@ function saveAll() {
   background: #fee2e2;
   color: #991b1b;
 }
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -948,7 +1090,6 @@ function saveAll() {
   justify-content: center;
   padding: 16px;
 }
-
 .modal {
   background: #fff;
   border-radius: 14px;
@@ -960,7 +1101,6 @@ function saveAll() {
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -969,14 +1109,12 @@ function saveAll() {
   border-bottom: 1px solid #f3f4f6;
   flex-shrink: 0;
 }
-
 .modal-header h3 {
   font-size: 1rem;
   font-weight: 700;
   color: #111827;
   margin: 0;
 }
-
 .close-btn {
   background: none;
   border: none;
@@ -988,23 +1126,19 @@ function saveAll() {
   display: flex;
   align-items: center;
 }
-
 .close-btn:hover {
   background: #f3f4f6;
 }
-
 .modal-body {
   padding: 16px 20px;
   overflow-y: auto;
   flex: 1;
 }
-
 .modal-body--detail {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
 .modal-footer {
   padding: 14px 20px;
   border-top: 1px solid #f3f4f6;
@@ -1014,13 +1148,11 @@ function saveAll() {
   background: #f9fafb;
   flex-shrink: 0;
 }
-
 .detail-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
 .label {
   font-weight: 600;
   color: #6b7280;
@@ -1029,12 +1161,10 @@ function saveAll() {
   text-transform: uppercase;
   flex-shrink: 0;
 }
-
 .value-text {
   color: #111827;
   font-size: 0.875rem;
 }
-
 .link-tel {
   color: #4f46e5;
   font-weight: 600;
@@ -1044,7 +1174,6 @@ function saveAll() {
   align-items: center;
   gap: 5px;
 }
-
 .tag-service {
   background: #f3f4f6;
   color: #374151;
@@ -1053,14 +1182,12 @@ function saveAll() {
   font-size: 0.75rem;
   border: 1px solid #e5e7eb;
 }
-
 .detail-message,
 .detail-note {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-
 .message-box {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -1072,7 +1199,6 @@ function saveAll() {
   word-break: break-word;
   margin: 0;
 }
-
 .form-input {
   width: 100%;
   padding: 8px 12px;
@@ -1083,12 +1209,10 @@ function saveAll() {
   box-sizing: border-box;
   font-family: inherit;
 }
-
 .form-input:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
-
 .status-select {
   -webkit-appearance: none;
   appearance: none;
@@ -1105,14 +1229,12 @@ function saveAll() {
   background-color: #f4f4f4;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
 }
-
 .status-done {
   color: #059669;
 }
 .status-cancelled {
   color: #f62b2b;
 }
-
 .btn {
   padding: 8px 18px;
   border-radius: 8px;
@@ -1122,7 +1244,6 @@ function saveAll() {
   border: 1px solid transparent;
   transition: all 0.15s;
 }
-
 .btn-ghost {
   background: #fff;
   color: #374151;
@@ -1138,7 +1259,6 @@ function saveAll() {
 .btn-primary:hover {
   background: #4338ca;
 }
-
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.2s ease;
@@ -1147,7 +1267,6 @@ function saveAll() {
 .modal-leave-to {
   opacity: 0;
 }
-
 @media (max-width: 768px) {
   .header-controls {
     flex-direction: column;
@@ -1172,7 +1291,6 @@ function saveAll() {
     min-width: unset;
   }
 }
-
 @media (max-width: 640px) {
   .page-title {
     font-size: 1.25rem;
