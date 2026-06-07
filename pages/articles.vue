@@ -1,7 +1,7 @@
 <template>
   <div>
     <section
-      class="relative pt-16 pb-16 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
+      class="relative pt-10 pb-10 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
       style="background-image: url(&quot;/images/bg-banner.jpg&quot;)"
     >
       <div class="absolute inset-0 bg-black/30 z-0"></div>
@@ -10,7 +10,7 @@
           {{ lang === "th" ? "คลังความรู้" : "Knowledge Base" }}
         </p>
         <h1
-          class="font-serif text-3xl md:text-4xl font-bold text-white mb-4 drop-shadow-sm"
+          class="font-serif text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-sm"
         >
           {{ lang === "th" ? "บทความและความรู้" : "Articles & Insights" }}
         </h1>
@@ -160,9 +160,9 @@
                   </p>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-xs text-neutral-400">{{
-                    article.created_at?.slice(0, 10)
-                  }}</span>
+                  <span class="text-xs text-neutral-400">
+                    {{ formatThaiDate(article.created_at) }}
+                  </span>
                   <span
                     class="text-brand-600 text-xs font-semibold inline-flex items-center gap-1 group-hover:text-brand-700 transition-colors"
                   >

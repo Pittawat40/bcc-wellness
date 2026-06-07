@@ -96,11 +96,23 @@
             :total="appointmentTotal"
             :loading="loading"
             @update-status="updateAppointmentStatus"
-            @save-note="saveAppointmentNote"
+            @save="onAppointmentSave"
             @delete-appointment="
               deleteItem('/appointments/', $event, loadAppointments)
             "
             @search="searchAppointments"
+          />
+
+          <AdminPageAppointmentCalendar
+            v-else-if="currentPage === 'appointment-calendar'"
+            :items="appointments"
+            :total="appointmentTotal"
+            :loading="loading"
+            @save="onCalendarSave"
+            @save-note="
+              (id, note, appointmentDate) =>
+                saveAppointmentNote(id, note, appointmentDate)
+            "
           />
 
           <AdminPageFaq
@@ -140,7 +152,6 @@
       </div>
     </div>
 
-    <!-- Modal ต่างๆ คงเดิมตามโครงสร้างของคอมโพเนนต์คุณ -->
     <AdminModal
       :open="modal.open"
       :title="modal.title"
@@ -295,7 +306,7 @@ const {
 
 const api = useAdminApi();
 const router = useRouter();
-const route = useRoute(); // ดึง Route ปัจจุบันมาใช้แกะ Query string
+const route = useRoute();
 const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
 
@@ -315,7 +326,6 @@ onMounted(() => {
     .me()
     .then((d) => {
       adminUsername.value = d.username;
-
       loadPageData(currentPage.value);
       startPolling(10000);
     })
@@ -334,7 +344,6 @@ function getToken() {
 
 const loading = ref(false);
 
-// ── Data refs คงเดิมทั้งหมด
 const articles = ref<any[]>([]);
 const articleTotal = ref(0);
 const videos = ref<any[]>([]);
@@ -360,6 +369,7 @@ const socialEdit = ref<any[]>([]);
 const socialReorderSaving = ref(false);
 const reviewCategories = ref([]);
 
+const defaultStatus = ref("");
 const pwMsg = ref("");
 const pwMsgType = ref("alert-success");
 const confirmDialog = reactive({
@@ -412,7 +422,6 @@ function showSuccess(title: string, message: string, onConfirm?: () => void) {
   Object.assign(successDialog, { title, message, onConfirm, open: true });
 }
 
-// ── Modal & Forms State
 const modal = reactive({
   open: false,
   type: "",
@@ -500,15 +509,15 @@ watch(
     () => ({ ...faqForm }),
   ],
   () => {
-    if (modal.error) {
-      modal.error = "";
-    }
+    if (modal.error) modal.error = "";
   },
   { deep: true },
 );
 
 watch(currentPage, (newPage) => {
-  setOnAppointmentPage(newPage === "appointments");
+  setOnAppointmentPage(
+    newPage === "appointments" || newPage === "appointment-calendar",
+  );
   loadPageData(newPage);
 });
 
@@ -519,13 +528,8 @@ async function showPage(page: string) {
     sidebarOpen.value = false;
     return;
   }
-
   sidebarOpen.value = false;
-
-  router.push({
-    path: "/dashboard",
-    query: { page: page },
-  });
+  router.push({ path: "/dashboard", query: { page } });
 }
 
 async function loadPageData(targetPage: string) {
@@ -543,6 +547,8 @@ async function loadPageData(targetPage: string) {
     else if (actualPage === "faq")
       await Promise.all([loadFaqs(), loadFaqCategories()]);
     else if (actualPage === "appointments") await loadAppointments();
+    else if (actualPage === "appointment-calendar")
+      await loadAppointments({ limit: 500 });
     else if (actualPage === "gallery") await loadGallery();
     else if (actualPage === "contact")
       await Promise.all([loadContact(), loadSocial()]);
@@ -689,7 +695,6 @@ async function loadSocial() {
   );
 }
 
-// ── Search handlers (คงเดิมทั้งหมด)
 async function searchArticles(p: any) {
   loading.value = true;
   try {
@@ -733,13 +738,13 @@ async function searchFaqs(p: any) {
 async function searchAppointments(p: any) {
   loading.value = true;
   try {
+    defaultStatus.value = p;
     await loadAppointments(p);
   } finally {
     loading.value = false;
   }
 }
 
-// ── Delete (คงเดิม)
 async function deleteItem(
   prefix: string,
   id: string | number,
@@ -953,9 +958,54 @@ async function updateAppointmentStatus(id: number, status: string) {
     showAlert("เกิดข้อผิดพลาด", e.message);
   }
 }
-async function saveAppointmentNote(id: number, note: string) {
+async function onAppointmentSave(
+  id: number,
+  status: string,
+  note: string,
+  appointmentDate: string,
+  defaultStatus: string,
+) {
   try {
-    await api.updateAppointment(id, { note });
+    await api.updateAppointment(id, {
+      status: status,
+      note: note,
+      appointment_date: appointmentDate,
+    });
+    await loadAppointments({ status: defaultStatus });
+    showSuccess("บันทึกสำเร็จ", "อัปเดตนัดหมายเรียบร้อยแล้ว");
+  } catch (e: any) {
+    showAlert("เกิดข้อผิดพลาด", e.message);
+  }
+}
+async function onCalendarSave(
+  id: number,
+  status: string,
+  note: string,
+  appointmentDate: string,
+) {
+  try {
+    await api.updateAppointment(id, {
+      status: status,
+      note: note,
+      appointment_date: appointmentDate,
+    });
+    await loadAppointments({ limit: 500 });
+    showSuccess("บันทึกสำเร็จ", "อัปเดตนัดหมายเรียบร้อยแล้ว");
+  } catch (e: any) {
+    showAlert("เกิดข้อผิดพลาด", e.message);
+  }
+}
+async function saveAppointmentNote(
+  id: number,
+  note: string,
+  appointmentDate: string = "",
+) {
+  try {
+    await api.updateAppointment(id, {
+      note,
+      appointment_date: appointmentDate,
+      ...(appointmentDate ? { status: "done" } : {}),
+    });
     await loadAppointments();
     showSuccess("บันทึกสำเร็จ", "โน้ตถูกบันทึกเรียบร้อย");
   } catch (e: any) {
@@ -1226,16 +1276,11 @@ async function saveModal() {
       await loadFaqs();
     }
 
-    // --- จุดที่เพิ่มเข้าเพิ่มเข้าไป ---
-    // 1. สั่งเปิดกล่อง Success Dialog แจ้งเตือนผู้ใช้
     showSuccess(
       "บันทึกข้อมูลสำเร็จ",
       "ข้อมูลในระบบได้รับการปรับปรุงเรียบร้อยแล้ว",
     );
-
-    // 2. สั่งปิดหน้าต่างฟอร์ม Modal ตัวที่พิมพ์อยู่
     modal.open = false;
-    // ----------------------------
   } catch (e: any) {
     modal.error = e.message || "เกิดข้อผิดพลาดในการบันทึก";
   } finally {

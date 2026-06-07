@@ -45,16 +45,15 @@
       </div>
 
       <div v-else>
-        <!-- Desktop Table -->
         <div class="table-wrap desktop-table">
           <table>
             <thead>
               <tr>
                 <th>ลำดับ</th>
                 <th>ชื่อ-เบอร์โทร</th>
-                <th>อีเมล</th>
                 <th>บริการที่สนใจ</th>
                 <th>วันที่ส่ง</th>
+                <th>วันที่นัดหมาย</th>
                 <th>สถานะ</th>
                 <th>จัดการ</th>
               </tr>
@@ -90,7 +89,6 @@
                     >{{ formatPhone(a.phone) }}
                   </div>
                 </td>
-                <td class="cell-secondary">{{ a.email || "–" }}</td>
                 <td>
                   <span v-if="a.service" class="tag-service">{{
                     a.service
@@ -98,25 +96,15 @@
                   <span v-else class="cell-secondary">–</span>
                 </td>
                 <td class="cell-secondary">
-                  {{ a.created_at?.slice(0, 16).replace("T", " ") }}
+                  {{ formatThaiDate(a.created_at) || "–" }}
+                </td>
+                <td class="cell-secondary">
+                  {{ formatThaiDate(a.appointment_date) || "–" }}
                 </td>
                 <td>
-                  <select
-                    :value="a.status"
-                    class="status-select"
-                    :class="`status-${a.status}`"
-                    @change="
-                      emit(
-                        'updateStatus',
-                        a.id,
-                        ($event.target as HTMLSelectElement).value,
-                      )
-                    "
-                  >
-                    <option value="pending">รอติดต่อ</option>
-                    <option value="done">เสร็จสิ้น</option>
-                    <option value="cancelled">ยกเลิก</option>
-                  </select>
+                  <span class="status-badge" :class="`badge-${a.status}`">
+                    {{ statusLabel(a.status) }}
+                  </span>
                 </td>
                 <td>
                   <div class="action-group">
@@ -127,13 +115,13 @@
                     >
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button
+                    <!-- <button
                       class="btn-icon btn-icon-danger"
                       @click="emit('delete', a.id)"
                       title="ลบ"
                     >
                       <i class="bi bi-trash3"></i>
-                    </button>
+                    </button> -->
                   </div>
                 </td>
               </tr>
@@ -141,7 +129,6 @@
           </table>
         </div>
 
-        <!-- Mobile Cards -->
         <div class="mobile-cards">
           <div v-if="!items.length" class="empty-state">
             <div class="empty-state-inner">
@@ -156,63 +143,52 @@
             class="appt-card"
             :class="{ 'appt-card--new': isNewAppointment(a) }"
           >
-            <!-- Header: number + name + status select -->
             <div class="appt-card__header">
               <span class="appt-card__num"
                 >#{{ (page - 1) * PAGE_SIZE + index + 1 }}</span
               >
               <div class="appt-card__name-wrap">
-                <span class="appt-card__name">{{ a.name }}</span>
+                <span class="appt-card__name">ชื่อ : {{ a.name }}</span>
                 <span v-if="isNewAppointment(a)" class="badge-new"
                   >รายการใหม่</span
                 >
               </div>
-              <!-- ใช้ wrapper แยก เพื่อให้ select native dropdown แสดงตำแหน่งถูก -->
               <div class="status-select-wrap">
-                <select
-                  :value="a.status"
-                  class="status-select"
-                  :class="`status-${a.status}`"
-                  @change="
-                    emit(
-                      'updateStatus',
-                      a.id,
-                      ($event.target as HTMLSelectElement).value,
-                    )
-                  "
-                >
-                  <option value="pending">รอติดต่อ</option>
-                  <option value="done">เสร็จสิ้น</option>
-                  <option value="cancelled">ยกเลิก</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Body -->
-            <div class="appt-card__body">
-              <div class="appt-card__row">
-                <i class="bi bi-telephone appt-card__icon"></i>
-                <a :href="`tel:${a.phone}`" class="appt-card__link">{{
-                  formatPhone(a.phone)
-                }}</a>
-              </div>
-              <div v-if="a.email" class="appt-card__row">
-                <i class="bi bi-envelope appt-card__icon"></i>
-                <span class="appt-card__text">{{ a.email }}</span>
-              </div>
-              <div v-if="a.service" class="appt-card__row">
-                <i class="bi bi-clipboard-pulse appt-card__icon"></i>
-                <span class="tag-service">{{ a.service }}</span>
-              </div>
-              <div class="appt-card__row">
-                <i class="bi bi-clock appt-card__icon"></i>
-                <span class="appt-card__text appt-card__text--muted">
-                  {{ a.created_at?.slice(0, 16).replace("T", " ") }}
+                <span class="status-badge" :class="`badge-${a.status}`">
+                  {{ statusLabel(a.status) }}
                 </span>
               </div>
             </div>
 
-            <!-- Footer actions -->
+            <div class="appt-card__body">
+              <div class="appt-card__row">
+                <i class="bi bi-telephone appt-card__icon"></i>เบอร์โทร :
+                <a :href="`tel:${a.phone}`" class="appt-card__link">{{
+                  formatPhone(a.phone)
+                }}</a>
+              </div>
+              <div v-if="a.service" class="appt-card__row">
+                <i class="bi bi-clipboard-pulse appt-card__icon"></i
+                >บริการที่สนใจ :
+                <span class="tag-service">{{ a.service }}</span>
+              </div>
+              <div class="appt-card__row">
+                <i class="bi bi-calendar-check appt-card__icon"></i>วันที่ส่ง :
+                <span class="appt-card__text appt-card__text--muted">
+                  {{ formatThaiDate(a.created_at) }}
+                </span>
+              </div>
+              <div v-if="a.appointment_date" class="appt-card__row">
+                <i class="bi bi-clock appt-card__icon"></i>วันที่นัดหมาย :
+                <span
+                  class="appt-card__text"
+                  style="color: #4f46e5; font-weight: 600"
+                >
+                  {{ formatThaiDate(a.appointment_date) }}
+                </span>
+              </div>
+            </div>
+
             <div class="appt-card__footer">
               <button
                 class="appt-card__btn appt-card__btn--view"
@@ -220,12 +196,12 @@
               >
                 <i class="bi bi-eye"></i> ดูรายละเอียด
               </button>
-              <button
+              <!-- <button
                 class="appt-card__btn appt-card__btn--delete"
                 @click="emit('delete', a.id)"
               >
                 <i class="bi bi-trash3"></i> ลบ
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -296,9 +272,36 @@
               </div>
               <div class="detail-row">
                 <span class="label">วันที่ส่ง</span
-                ><span class="value-text">{{
-                  viewing.created_at?.slice(0, 16).replace("T", " ")
-                }}</span>
+                ><span class="value-text">
+                  {{ formatThaiDate(viewing.created_at) }}
+                </span>
+              </div>
+              <div v-if="viewing.status === 'cancelled'" class="detail-row">
+                <span class="label">วันที่นัดหมาย</span
+                ><span class="value-text">
+                  {{ formatThaiDate(viewing.appointment_date) }}
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="label">สถานะ</span>
+                <div
+                  v-if="viewing.status === 'cancelled'"
+                  :class="`status-${pendingStatus}`"
+                  style="font-size: 0.75rem; font-weight: 600"
+                >
+                  ยกเลิก
+                </div>
+                <select
+                  v-else
+                  v-model="pendingStatus"
+                  class="status-select"
+                  :class="`status-${pendingStatus}`"
+                >
+                  <option :value="viewing.status" disabled>
+                    {{ statusLabel(viewing.status) }}
+                  </option>
+                  <option value="cancelled">ยกเลิก</option>
+                </select>
               </div>
               <div v-if="viewing.message" class="flex flex-col gap-1.5 mt-2">
                 <span class="label">ข้อความจากลูกค้า</span>
@@ -307,6 +310,17 @@
                 >
                   {{ viewing.message }}
                 </p>
+              </div>
+              <div
+                v-if="viewing.status !== 'cancelled'"
+                class="flex flex-col gap-1.5 mt-2"
+              >
+                <span class="label">วันที่นัดหมาย</span>
+                <input
+                  v-model="appointmentDateEdit"
+                  type="datetime-local"
+                  class="form-input"
+                />
               </div>
               <div class="flex flex-col gap-1.5 mt-2">
                 <span class="label">หมายเหตุ</span>
@@ -322,9 +336,7 @@
               <button class="btn btn-ghost" @click="viewing = null">
                 ยกเลิก
               </button>
-              <button class="btn btn-primary" @click="saveNote">
-                บันทึกหมายเหตุ
-              </button>
+              <button class="btn btn-primary" @click="saveNote">บันทึก</button>
             </div>
           </div>
         </div>
@@ -346,8 +358,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "updateStatus", id: number, status: string): void;
-  (e: "saveNote", id: number, note: string): void;
+  (
+    e: "save",
+    id: number,
+    status: string,
+    note: string,
+    appointmentDate: string,
+    defaultStatus: string,
+  ): void;
   (e: "delete", id: number): void;
   (
     e: "search",
@@ -359,13 +377,17 @@ const filter = ref("");
 const searchQuery = ref("");
 const viewing = ref<any>(null);
 const noteEdit = ref("");
+const appointmentDateEdit = ref("");
 const page = ref(1);
+const pendingStatus = ref("");
 let searchTimer: any;
 
 defineExpose({ filter });
 
 watch(viewing, (v) => {
   noteEdit.value = v?.note || "";
+  appointmentDateEdit.value = v?.appointment_date || "";
+  pendingStatus.value = v?.status || "";
 });
 
 const isNewAppointment = (appointment: any) => {
@@ -389,7 +411,7 @@ const formatPhone = (phone: any) => {
 const statusOpts = [
   { value: "", label: "ทั้งหมด" },
   { value: "pending", label: "รอติดต่อ" },
-  { value: "done", label: "เสร็จสิ้น" },
+  { value: "done", label: "นัดหมายแล้ว" },
   { value: "cancelled", label: "ยกเลิก" },
 ];
 
@@ -411,6 +433,9 @@ const pageNumbers = computed(() => {
   for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 });
+
+const statusLabel = (s: string) =>
+  s === "pending" ? "รอติดต่อ" : s === "done" ? "นัดหมายแล้ว" : "ยกเลิก";
 
 function emitSearch() {
   emit("search", {
@@ -443,8 +468,17 @@ function goPage(p: number) {
 }
 function saveNote() {
   if (!viewing.value) return;
-  emit("saveNote", viewing.value.id, noteEdit.value);
+  const id = viewing.value.id;
+  const note = noteEdit.value;
+  const appointmentDate = appointmentDateEdit.value;
+
+  const status =
+    appointmentDate && pendingStatus.value === "pending"
+      ? "done"
+      : pendingStatus.value;
+
   viewing.value = null;
+  emit("save", id, status, note, appointmentDate, filter.value);
 }
 </script>
 
@@ -466,7 +500,6 @@ function saveNote() {
   color: #6b7280;
 }
 
-/* ── Filter bar ── */
 .filter-container {
   display: flex;
   flex-wrap: wrap;
@@ -513,7 +546,6 @@ function saveNote() {
   padding: 0;
 }
 
-/* ── Status Tabs ── */
 .status-tabs-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -549,7 +581,6 @@ function saveNote() {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* ── Card shell ── */
 .card {
   background: #fff;
   border-radius: 12px;
@@ -557,7 +588,6 @@ function saveNote() {
   overflow: hidden;
 }
 
-/* ── Desktop Table ── */
 .desktop-table {
   display: block;
 }
@@ -591,6 +621,26 @@ tr.row-new td {
   background: #fef9f0;
 }
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge-pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.badge-done {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badge-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
 .cell-primary {
   font-weight: 600;
   color: #111827;
@@ -628,7 +678,6 @@ tr.row-new td {
   border: 1px solid #e5e7eb;
 }
 
-/* ── Status Select ── */
 .status-select-wrap {
   position: relative;
   flex-shrink: 0;
@@ -651,7 +700,6 @@ tr.row-new td {
   transition: all 0.2s;
   background-color: #f4f4f4;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  /* ป้องกัน overflow ของ parent มาตัด dropdown */
   position: relative;
   z-index: 1;
 }
@@ -665,7 +713,6 @@ tr.row-new td {
   color: #f62b2b;
 }
 
-/* ── Action icons ── */
 .action-group {
   display: flex;
   gap: 6px;
@@ -694,7 +741,6 @@ tr.row-new td {
   border-color: #fecaca;
 }
 
-/* ── Mobile Cards ── */
 .mobile-cards {
   display: none;
   flex-direction: column;
@@ -705,7 +751,6 @@ tr.row-new td {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  /* ลบ overflow: hidden ออก เพื่อให้ native select dropdown แสดงตำแหน่งถูกต้อง */
   overflow: visible;
   transition: background 0.15s;
 }
@@ -720,9 +765,7 @@ tr.row-new td {
   gap: 8px;
   padding: 10px 14px 8px;
   border-bottom: 1px solid #f3f4f6;
-  /* ต้องให้ header ก็ visible ด้วย */
   overflow: visible;
-  /* จำลอง border-radius ด้านบนให้ header ดูเหมือนเดิม */
   border-radius: 12px 12px 0 0;
 }
 .appt-card__num {
@@ -814,7 +857,6 @@ tr.row-new td {
   background: #fee2e2;
 }
 
-/* ── Empty State ── */
 .empty-state {
   text-align: center;
 }
@@ -832,7 +874,6 @@ tr.row-new td {
   color: #d1d5db;
 }
 
-/* ── Loading ── */
 .loading-state {
   display: flex;
   gap: 6px;
@@ -863,7 +904,6 @@ tr.row-new td {
   }
 }
 
-/* ── Pagination ── */
 .pagination {
   display: flex;
   align-items: center;
@@ -899,7 +939,6 @@ tr.row-new td {
   cursor: not-allowed;
 }
 
-/* ── Modal ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1026,7 +1065,6 @@ tr.row-new td {
   opacity: 0;
 }
 
-/* ── Responsive ── */
 @media (max-width: 768px) {
   .filter-container {
     flex-direction: column;
@@ -1061,12 +1099,10 @@ tr.row-new td {
     width: 100%;
   }
 
-  /* mobile: card ไม่ต้องการ border/bg จาก .card wrapper */
   .card {
     border: none;
     background: transparent;
     box-shadow: none;
-    /* สำคัญ: ต้องเปิด overflow ให้ dropdown ของ card ลูกโผล่ได้ */
     overflow: visible;
   }
 

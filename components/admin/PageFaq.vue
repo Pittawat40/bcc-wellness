@@ -88,7 +88,7 @@
                 </td>
                 <td>
                   <div class="cell-secondary whitespace-nowrap">
-                    {{ f.created_at?.slice(0, 16).replace("T", " ") }}
+                    {{ formatThaiDate(f.created_at) }}
                   </div>
                 </td>
                 <td>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <section
-      class="relative pt-16 pb-16 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
+      class="relative pt-10 pb-10 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
       style="background-image: url(&quot;/images/bg-banner.jpg&quot;)"
     >
       <div class="absolute inset-0 bg-black/30 z-0"></div>
@@ -9,7 +9,7 @@
       <div class="container-narrow text-center relative z-10">
         <p class="tag bg-white/90 text-brand-800 mb-4 backdrop-blur-sm">FAQ</p>
         <h1
-          class="font-serif text-3xl md:text-4xl font-bold text-white mb-4 drop-shadow-sm"
+          class="font-serif text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-sm"
         >
           {{ lang === "th" ? "คำถามที่พบบ่อย" : "Frequently Asked Questions" }}
         </h1>

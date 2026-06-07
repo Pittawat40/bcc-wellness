@@ -1,7 +1,7 @@
 <template>
   <div>
     <section
-      class="relative pt-16 pb-16 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
+      class="relative pt-10 pb-10 md:pt-32 md:pb-32 border-b border-neutral-200/60 bg-cover bg-center bg-no-repeat overflow-hidden"
       style="background-image: url(&quot;/images/bg-banner.jpg&quot;)"
     >
       <div class="absolute inset-0 bg-black/30 z-0"></div>

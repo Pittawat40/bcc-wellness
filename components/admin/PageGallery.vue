@@ -88,7 +88,7 @@
                 </td>
                 <td>
                   <div class="cell-secondary whitespace-nowrap">
-                    {{ g.created_at?.slice(0, 16).replace("T", " ") }}
+                    {{ formatThaiDate(g.created_at) }}
                   </div>
                 </td>
                 <td>
@@ -173,9 +173,9 @@
                 </div>
                 <div class="meta-item">
                   <span class="meta-label">วันที่สร้าง:</span>
-                  <span class="cell-secondary">{{
-                    g.created_at?.slice(0, 10)
-                  }}</span>
+                  <span class="cell-secondary">
+                    {{ formatThaiDate(g.created_at) }}
+                  </span>
                 </div>
               </div>
             </div>

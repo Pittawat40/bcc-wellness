@@ -8,10 +8,10 @@ export function useAppointmentNotify(callbacks?: {
   const latestAppointments = ref<any[]>([]);
 
   function getLocalTime() {
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * -1;
-    const local = new Date(now.getTime() + offset * 60 * 1000);
-    return local.toISOString().replace("T", " ").slice(0, 19);
+    return new Date()
+      .toLocaleString("sv-SE", { timeZone: "Asia/Bangkok" })
+      .replace("T", " ")
+      .slice(0, 19);
   }
 
   const state = {

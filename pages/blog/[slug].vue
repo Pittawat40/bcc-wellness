@@ -2,7 +2,7 @@
   <div>
     <section
       v-if="blog"
-      class="relative pt-32 pb-24 bg-cover bg-center bg-no-repeat overflow-hidden"
+      class="relative pt-24 pb-16 md:pt-32 md:pb-24 bg-cover bg-center bg-no-repeat overflow-hidden"
       :style="`background-image: url('${coverImage}')`"
     >
       <div class="absolute inset-0 bg-black/40 z-0"></div>
@@ -17,7 +17,7 @@
           }}
         </p>
         <h1
-          class="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-5 drop-shadow-sm leading-tight max-w-3xl"
+          class="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 drop-shadow-sm leading-tight max-w-3xl"
         >
           {{ lang === "th" ? blog.title : blog.title_en }}
         </h1>

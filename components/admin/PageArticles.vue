@@ -85,7 +85,7 @@
                   </span>
                 </td>
                 <td class="cell-secondary whitespace-nowrap">
-                  {{ a.created_at?.slice(0, 16).replace("T", " ") }}
+                  {{ formatThaiDate(a.created_at) }}
                 </td>
                 <td>
                   <div class="action-group">
@@ -148,9 +148,9 @@
                 </div>
                 <div>
                   <span class="meta-label">วันที่สร้าง:</span>
-                  <span class="cell-secondary">{{
-                    a.created_at?.slice(0, 10)
-                  }}</span>
+                  <span class="cell-secondary">
+                    {{ formatThaiDate(a.created_at) }}
+                  </span>
                 </div>
               </div>
             </div>
