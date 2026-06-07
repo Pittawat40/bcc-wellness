@@ -46,10 +46,6 @@
         </div>
       </div>
 
-      <div v-else-if="fetchError" class="error-banner">
-        ⚠️ โหลดข้อมูลไม่สำเร็จ: {{ fetchError.message }}
-      </div>
-
       <div
         :class="[
           'transition-all duration-300',
@@ -136,7 +132,8 @@ ChartJS.register(
   Legend,
 );
 
-const API_BASE = import.meta.env.API_BASE || "http://localhost:4002";
+const config = useRuntimeConfig();
+const API_BASE = config.public.apiBase as string;
 
 const {
   data,
@@ -155,7 +152,7 @@ const {
     };
     visitorMonthlyData: number[];
   };
-}>(`${API_BASE}/api/dashboard`, {
+}>(`${API_BASE}/dashboard`, {
   server: true,
   lazy: false,
 });

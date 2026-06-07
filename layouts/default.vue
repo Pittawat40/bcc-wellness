@@ -14,11 +14,14 @@
 
 <script setup lang="ts">
 // ── Track page view ──────────────────────────────────────────
+
+const config = useRuntimeConfig();
+
 onMounted(async () => {
   try {
-    await $fetch("/api/dashboard/track", {
+    await $fetch("/dashboard/track", {
       method: "POST",
-      baseURL: import.meta.env.API_BASE || "http://localhost:4002",
+      baseURL: config.public.apiBase,
       body: { path: "/" },
     });
   } catch {}
