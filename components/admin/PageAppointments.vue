@@ -53,8 +53,8 @@
                 <th>ชื่อ-เบอร์โทร</th>
                 <th>บริการที่สนใจ</th>
                 <th>วันที่ส่ง</th>
-                <th>วันที่นัดหมาย</th>
                 <th>สถานะ</th>
+                <th>วันที่นัดหมาย</th>
                 <th>จัดการ</th>
               </tr>
             </thead>
@@ -98,12 +98,14 @@
                 <td class="cell-secondary">
                   {{ formatThaiDate(a.created_at) || "–" }}
                 </td>
-                <td class="cell-secondary">
-                  {{ formatThaiDate(a.appointment_date) || "–" }}
-                </td>
                 <td>
                   <span class="status-badge" :class="`badge-${a.status}`">
                     {{ statusLabel(a.status) }}
+                  </span>
+                </td>
+                <td class="cell-secondary">
+                  <span style="color: #4f46e5; font-weight: 600">
+                    {{ formatThaiDate(a.appointment_date) || "–" }}
                   </span>
                 </td>
                 <td>
@@ -382,7 +384,7 @@ const page = ref(1);
 const pendingStatus = ref("");
 let searchTimer: any;
 
-defineExpose({ filter });
+defineExpose({ filter, page });
 
 watch(viewing, (v) => {
   noteEdit.value = v?.note || "";

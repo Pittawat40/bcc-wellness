@@ -311,15 +311,15 @@ const thMonths = [
   "พฤศจิกายน",
   "ธันวาคม",
 ];
-const dayHeaders = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+const dayHeaders = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
 const dayHeadersFull = [
-  "อาทิตย์",
   "จันทร์",
   "อังคาร",
   "พุธ",
   "พฤหัส",
   "ศุกร์",
   "เสาร์",
+  "อาทิตย์",
 ];
 
 const isSameDay = (a: Date, b: Date) =>
@@ -345,7 +345,9 @@ const periodLabel = computed(() => {
 
 const weekStart = computed(() => {
   const d = new Date(currentDate.value);
-  d.setDate(d.getDate() - d.getDay());
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
   return d;
 });
 
@@ -370,7 +372,8 @@ function goToday() {
 const monthCells = computed(() => {
   const year = currentDate.value.getFullYear();
   const month = currentDate.value.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
+  let firstDay = new Date(year, month, 1).getDay();
+  firstDay = firstDay === 0 ? 6 : firstDay - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const cells: any[] = [];

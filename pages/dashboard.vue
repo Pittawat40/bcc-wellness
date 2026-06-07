@@ -301,7 +301,13 @@ const {
   stopPolling,
   setOnAppointmentPage,
 } = useAppointmentNotify({
-  onNewAppointment: () => loadAppointments(),
+  onNewAppointment: async () => {
+    await loadAppointments({ status: "pending" });
+    if (adminPageAppointmentsRef.value) {
+      adminPageAppointmentsRef.value.filter = "pending";
+      adminPageAppointmentsRef.value.page = 1;
+    }
+  },
 });
 
 const api = useAdminApi();
@@ -327,7 +333,8 @@ onMounted(() => {
     .then((d) => {
       adminUsername.value = d.username;
       loadPageData(currentPage.value);
-      startPolling(10000);
+      setOnAppointmentPage(currentPage.value === "appointments");
+      startPolling(20000);
     })
     .catch(() => doLogout());
 });
@@ -515,9 +522,7 @@ watch(
 );
 
 watch(currentPage, (newPage) => {
-  setOnAppointmentPage(
-    newPage === "appointments" || newPage === "appointment-calendar",
-  );
+  setOnAppointmentPage(newPage === "appointments");
   loadPageData(newPage);
 });
 
@@ -738,7 +743,7 @@ async function searchFaqs(p: any) {
 async function searchAppointments(p: any) {
   loading.value = true;
   try {
-    defaultStatus.value = p;
+    defaultStatus.value = p.status || "";
     await loadAppointments(p);
   } finally {
     loading.value = false;

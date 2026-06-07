@@ -25,7 +25,10 @@ export function useAppointmentNotify(callbacks?: {
         `/appointments/check-new?since=${encodeURIComponent(state.lastChecked)}`,
       );
 
-      state.lastChecked = getLocalTime();
+      if (res.serverTime) {
+        state.lastChecked = res.serverTime;
+      }
+
       if (res.latest && res.latest.length > 0) {
         latestAppointments.value = res.latest;
       }
