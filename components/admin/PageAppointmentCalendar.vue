@@ -350,7 +350,7 @@ const emit = defineEmits<{
 
 const viewMode = ref<"month" | "week">("month");
 const today = new Date();
-const currentDate = ref(new Date(today.getFullYear(), today.getMonth(), 1));
+const currentDate = ref(new Date());
 const viewing = ref<any>(null);
 const noteEdit = ref("");
 const pendingStatus = ref("");
@@ -522,7 +522,7 @@ function nextPeriod() {
   currentDate.value = d;
 }
 function goToday() {
-  currentDate.value = new Date(today.getFullYear(), today.getMonth(), 1);
+  currentDate.value = new Date();
 }
 
 const monthCells = computed(() => {

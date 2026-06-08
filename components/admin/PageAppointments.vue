@@ -63,7 +63,7 @@
                 <td colspan="7" class="empty-state">
                   <div class="empty-state-inner">
                     <i class="bi bi-calendar2-x empty-icon"></i>
-                    <span>ไม่พบรายการนัดหมายที่ตรงเงื่อนไข</span>
+                    <span>ไม่พบรายการนัดหมาย</span>
                   </div>
                 </td>
               </tr>
@@ -135,7 +135,7 @@
           <div v-if="!items.length" class="empty-state">
             <div class="empty-state-inner">
               <i class="bi bi-calendar2-x empty-icon"></i>
-              <span>ไม่พบรายการนัดหมายที่ตรงเงื่อนไข</span>
+              <span>ไม่พบรายการนัดหมาย</span>
             </div>
           </div>
 

@@ -97,9 +97,7 @@
             :loading="loading"
             @update-status="updateAppointmentStatus"
             @save="onAppointmentSave"
-            @delete-appointment="
-              deleteItem('/appointments/', $event, loadAppointments)
-            "
+            @delete="deleteItem('/appointments/', $event, loadAppointments)"
             @search="searchAppointments"
           />
 
