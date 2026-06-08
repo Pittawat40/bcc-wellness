@@ -229,52 +229,6 @@ const apiStorageBase = (useRuntimeConfig().public.apiBase as string).replace(
   "",
 );
 
-const fallbackVideos = [
-  {
-    id: 1,
-    titleTh: "ความประทับใจจากคุณแม่ปาริชาต (IVF ความสำเร็จในรอบที่ 2)",
-    titleEn:
-      "Heartwarming Testimonial from Mrs. Parichat (Successful 2nd IVF Cycle)",
-    descriptionTh:
-      "แชร์ประสบการณ์ทำ IVF สำเร็จกับความรู้สึกที่เปลี่ยนไปของครอบครัวเรา",
-    descriptionEn:
-      "Sharing our intimate IVF success milestone and how it brought profound joy to our home.",
-    thumbnail:
-      "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?q=80&w=600&auto=format&fit=crop",
-    url: "https://www.youtube.com/watch?v=YWrgyHn0VSY",
-    isFallback: true,
-  },
-  {
-    id: 2,
-    titleTh: "เตรียมตัวอย่างไรก่อนเข้าสู่กระบวนการเด็กหลอดแก้ว",
-    titleEn:
-      "Clinical Protocols: Essential Preparations for Advanced IVF Success",
-    descriptionTh:
-      "ขั้นตอนการดูแลตัวเองและเตรียมความพร้อมของร่างกายจากแพทย์ผู้เชี่ยวชาญ",
-    descriptionEn:
-      "Crucial biological optimization and mental health guidance shared by our primary physicians.",
-    thumbnail:
-      "https://images.unsplash.com/photo-1516627145497-ae6968895b74?q=80&w=600&auto=format&fit=crop",
-    url: "https://www.youtube.com/watch?v=YWrgyHn0VSY",
-    isFallback: true,
-  },
-  {
-    id: 3,
-    titleTh:
-      "เทคโนโลยีคัดกรองโครโมโซมตัวอ่อนช่วยเพิ่มอัตราความสำเร็จได้อย่างไร",
-    titleEn:
-      "How PGT-A Embryo Chromosome Screening Drives Higher Success Rates",
-    descriptionTh:
-      "เจาะลึกเทคโนโลยีห้องแล็บมาตรฐานระดับสากลที่ BCC IVF Wellness",
-    descriptionEn:
-      "An inside look into our world-class, ISO-accredited embryology labs.",
-    thumbnail:
-      "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?q=80&w=600&auto=format&fit=crop",
-    url: "https://www.youtube.com/watch?v=YWrgyHn0VSY",
-    isFallback: true,
-  },
-];
-
 const { data: videoData, pending: videoPending } = await useVideos({
   limit: "12",
 });
@@ -293,7 +247,7 @@ const videos = computed(() => {
       isFallback: false,
     }));
   }
-  return fallbackVideos;
+  return [];
 });
 
 const activeVideo = ref<any>(null);

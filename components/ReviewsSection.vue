@@ -1,5 +1,6 @@
 <template>
   <section
+    v-if="reviews.length"
     ref="sectionRef"
     class="py-8 md:py-14 bg-warm-100 scroll-reveal relative overflow-hidden select-none"
   >
@@ -55,7 +56,11 @@
         </h2>
       </div>
 
-      <div class="item-reveal opacity-0" :style="{ transitionDelay: '250ms' }">
+      <div
+        v-if="!reviewPending && reviews.length > 0"
+        class="item-reveal opacity-0"
+        :style="{ transitionDelay: '250ms' }"
+      >
         <swiper
           :modules="swiperModules"
           :slides-per-view="1"
@@ -70,7 +75,7 @@
         >
           <swiper-slide
             v-for="review in reviews"
-            :key="review.name + review.textTh"
+            :key="review.id"
             class="!h-auto"
           >
             <div
@@ -79,7 +84,7 @@
               <div>
                 <div class="flex gap-0.5 mb-4">
                   <svg
-                    v-for="i in 5"
+                    v-for="i in review.rating"
                     :key="i"
                     class="w-4 h-4 text-warm-500"
                     fill="currentColor"
@@ -91,8 +96,9 @@
                   </svg>
                 </div>
 
+                <!-- ข้อความรีวิวแยกภาษา -->
                 <p class="text-neutral-600 text-sm leading-relaxed mb-6">
-                  "{{ lang === "th" ? review.textTh : review.textEn }}"
+                  "{{ lang === "th" ? review.quoteTh : review.quoteEn }}"
                 </p>
               </div>
 
@@ -100,16 +106,21 @@
                 class="flex items-center gap-3 pt-4 border-t border-neutral-100 mt-auto"
               >
                 <div
-                  class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-200 to-warm-200 flex items-center justify-center text-brand-700 font-semibold text-sm"
+                  class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm bg-gradient-to-br from-brand-400 to-warm-400"
                 >
-                  {{ review.name[0] }}
+                  {{ lang === "th" ? review.nameTh[0] : review.nameEn[0] }}
                 </div>
                 <div>
                   <div class="font-semibold text-neutral-900 text-sm">
-                    {{ review.name }}
+                    {{ lang === "th" ? review.nameTh : review.nameEn }}
                   </div>
                   <div class="text-xs text-neutral-400">
-                    {{ lang === "th" ? review.detailTh : review.detailEn }}
+                    {{
+                      lang === "th" ? review.treatmentTh : review.treatmentEn
+                    }}
+                    <template v-if="review.date">
+                      | {{ formatApiDate(review.date, lang) }}
+                    </template>
                   </div>
                 </div>
               </div>
@@ -117,21 +128,25 @@
           </swiper-slide>
         </swiper>
       </div>
+
+      <div v-else-if="reviewPending" class="text-center py-12 text-neutral-400">
+        Loading reviews...
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 
 const lang = useLang();
-
 const swiperModules = [Pagination, Autoplay];
 
+/* ── Intersection Observer สำหรับ Animation ──────────────── */
 const sectionRef = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
@@ -154,62 +169,38 @@ onUnmounted(() => {
   if (observer) observer.disconnect();
 });
 
-const reviews = [
-  {
-    name: "คุณแม่ปาริชาต",
-    detailTh: "IVF รอบที่ 2 | มิ.ย. 2024",
-    detailEn: "2nd IVF Cycle | June 2024",
-    textTh:
-      "ทีมแพทย์ดูแลเราดีมาก อธิบายทุกขั้นตอนอย่างละเอียด ทำให้ไม่ตึงเครียด ตอนนี้ลูกอายุ 8 เดือนแล้วค่ะ ขอบคุณมากๆ",
-    textEn:
-      "The medical team took great care of us, explaining every step in detail, which really reduced our stress. My baby is now 8 months old. Thank you so much!",
-  },
-  {
-    name: "คุณแม่สุวรรณา",
-    detailTh: "IUI รอบที่ 3 | มี.ค. 2024",
-    detailEn: "3rd IUI Cycle | March 2024",
-    textTh:
-      "หลังจากลองมาหลายที่ BCC IVF เป็นที่ที่ทำให้เราสำเร็จ บรรยากาศอบอุ่น คุณหมอใจดีและเป็นกันเอง",
-    textEn:
-      "After trying many clinics, BCC IVF is where we finally succeeded. The atmosphere is warm, and the doctor is incredibly kind and friendly.",
-  },
-  {
-    name: "คุณแม่นภาพร",
-    detailTh: "Egg Freezing | ธ.ค. 2023",
-    detailEn: "Egg Freezing | Dec 2023",
-    textTh:
-      "มาแช่แข็งไข่เผื่ออนาคต ขั้นตอนไม่ยากอย่างที่คิด ทีมงานอธิบายดีมาก มีคำถามตอบตลอด แนะนำเลยค่ะ",
-    textEn:
-      "I came to freeze my eggs for the future. The process was much easier than expected. The team explained everything well and was always available to answer questions. Highly recommended!",
-  },
-  {
-    name: "คุณแม่ปาริชาต",
-    detailTh: "IVF รอบที่ 2 | มิ.ย. 2024",
-    detailEn: "2nd IVF Cycle | June 2024",
-    textTh:
-      "ทีมแพทย์ดูแลเราดีมาก อธิบายทุกขั้นตอนอย่างละเอียด ทำให้ไม่ตึงเครียด ตอนนี้ลูกอายุ 8 เดือนแล้วค่ะ ขอบคุณมากๆ",
-    textEn:
-      "The medical team took great care of us, explaining every step in detail, which really reduced our stress. My baby is now 8 months old. Thank you so much!",
-  },
-  {
-    name: "คุณแม่สุวรรณา",
-    detailTh: "IUI รอบที่ 3 | มี.ค. 2024",
-    detailEn: "3rd IUI Cycle | March 2024",
-    textTh:
-      "หลังจากลองมาหลายที่ BCC IVF เป็นที่ที่ทำให้เราสำเร็จ บรรยากาศอบอุ่น คุณหมอใจดีและเป็นกันเอง",
-    textEn:
-      "After trying many clinics, BCC IVF is where we finally succeeded. The atmosphere is warm, and the doctor is incredibly kind and friendly.",
-  },
-  {
-    name: "คุณแม่นภาพร",
-    detailTh: "Egg Freezing | ธ.ค. 2023",
-    detailEn: "Egg Freezing | Dec 2023",
-    textTh:
-      "มาแช่แข็งไข่เผื่ออนาคต ขั้นตอนไม่ยากอย่างที่คิด ทีมงานอธิบายดีมาก มีคำถามตอบตลอด แนะนำเลยค่ะ",
-    textEn:
-      "I came to freeze my eggs for the future. The process was much easier than expected. The team explained everything well and was always available to answer questions. Highly recommended!",
-  },
-];
+const { data: reviewData, pending: reviewPending } = await useReviews({
+  limit: "9",
+  status: "published",
+});
+
+const formatApiDate = (dateString: string, currentLang: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const locale = currentLang === "th" ? "th-TH" : "en-US";
+  return date.toLocaleDateString(locale, {
+    year: "numeric",
+    month: "short",
+  });
+};
+
+const reviews = computed(() => {
+  const list = reviewData.value?.reviews || [];
+  if (list.length > 0) {
+    return list.map((item: any) => ({
+      id: item.id,
+      nameTh: item.author_name || item.name,
+      nameEn: item.author_name_en || item.author_name || item.name,
+      date: item.date,
+      treatmentTh: item.category || item.treatment,
+      treatmentEn: item.category_en || item.category || item.treatment,
+      rating: item.rating || 5, // fallback เป็น 5 ดาวกรณีข้อมูลไม่มีมา
+      quoteTh: item.content || item.quote,
+      quoteEn: item.content_en || item.content || item.quote,
+    }));
+  }
+  return [];
+});
 </script>
 
 <style scoped>
