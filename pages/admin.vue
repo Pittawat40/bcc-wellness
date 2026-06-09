@@ -18,8 +18,12 @@ onMounted(() => {
   }
 });
 
-function onLoginSuccess(d: { token: string; username: string }) {
-  api.saveToken(d.token);
+function onLoginSuccess(d: {
+  accessToken: string;
+  refreshToken: string;
+  username: string;
+}) {
+  api.saveToken(d.accessToken, d.refreshToken);
   router.push("/dashboard");
 }
 </script>

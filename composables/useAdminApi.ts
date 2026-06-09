@@ -8,6 +8,37 @@ export function useAdminApi() {
     return "";
   }
 
+  function getRefreshToken() {
+    if (process.client) return localStorage.getItem("ivf_refresh_token") || "";
+    return "";
+  }
+
+  async function tryRefresh(): Promise<boolean> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const r = await fetch(`${base}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!r.ok) {
+        localStorage.removeItem("ivf_token");
+        localStorage.removeItem("ivf_refresh_token");
+        window.location.href = "/admin";
+        return false;
+      }
+
+      const data = await r.json();
+      localStorage.setItem("ivf_token", data.accessToken);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function request(
     method: string,
     path: string,
@@ -26,11 +57,27 @@ export function useAdminApi() {
       bodyInit = JSON.stringify(body);
     }
 
-    const r = await fetch(`${base}${path}`, {
+    let r = await fetch(`${base}${path}`, {
       method,
       headers,
       body: bodyInit,
     });
+
+    if (r.status === 401 || r.status === 403) {
+      const refreshed = await tryRefresh();
+      if (refreshed) {
+        const newToken = getToken();
+        r = await fetch(`${base}${path}`, {
+          method,
+          headers: {
+            ...headers,
+            Authorization: `Bearer ${newToken}`,
+          },
+          body: bodyInit,
+        });
+      }
+    }
+
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
     return data;
@@ -63,8 +110,22 @@ export function useAdminApi() {
       }),
 
     // token helpers
-    saveToken: (token: string) => localStorage.setItem("ivf_token", token),
-    clearToken: () => localStorage.removeItem("ivf_token"),
+    saveToken: (accessToken: string, refreshToken: string) => {
+      localStorage.setItem("ivf_token", accessToken);
+      localStorage.setItem("ivf_refresh_token", refreshToken);
+    },
+    clearToken: () => {
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        fetch(`${base}/auth/logout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        }).catch(() => {});
+      }
+      localStorage.removeItem("ivf_token");
+      localStorage.removeItem("ivf_refresh_token");
+    },
     isLoggedIn: () => !!getToken(),
 
     // ── appointments

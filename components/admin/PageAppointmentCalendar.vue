@@ -1289,6 +1289,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     flex: 1;
     justify-content: center;
   }
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
   .page-header {
     flex-direction: column;
   }
