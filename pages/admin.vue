@@ -14,7 +14,9 @@ const router = useRouter();
 
 onMounted(() => {
   if (api.isLoggedIn()) {
-    api.me().catch(() => api.clearToken());
+    api.me().catch(() => {
+      api.clearToken();
+    });
   }
 });
 
