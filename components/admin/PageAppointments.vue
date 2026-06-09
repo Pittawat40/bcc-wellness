@@ -78,7 +78,7 @@
                   }}</span>
                 </td>
                 <td>
-                  <div class="cell-primary">
+                  <div class="cell-primary whitespace-nowrap">
                     {{ a.name }}
                     <span v-if="isNewAppointment(a)" class="badge-new"
                       >รายการใหม่</span
@@ -95,16 +95,22 @@
                   }}</span>
                   <span v-else class="cell-secondary">–</span>
                 </td>
-                <td class="cell-secondary">
+                <td class="cell-secondary whitespace-nowrap">
                   {{ formatThaiDate(a.created_at) || "–" }}
                 </td>
                 <td>
-                  <span class="status-badge" :class="`badge-${a.status}`">
+                  <span
+                    class="status-badge whitespace-nowrap"
+                    :class="`badge-${a.status}`"
+                  >
                     {{ statusLabel(a.status) }}
                   </span>
                 </td>
                 <td class="cell-secondary">
-                  <span style="color: #4f46e5; font-weight: 600">
+                  <span
+                    class="whitespace-nowrap"
+                    style="color: #4f46e5; font-weight: 600"
+                  >
                     {{ formatThaiDate(a.appointment_date) || "–" }}
                   </span>
                 </td>

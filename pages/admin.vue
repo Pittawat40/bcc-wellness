@@ -12,13 +12,9 @@ definePageMeta({ layout: false });
 const api = useAdminApi();
 const router = useRouter();
 
-// ── ถ้า login อยู่แล้ว ให้ redirect ไป dashboard เลย
 onMounted(() => {
   if (api.isLoggedIn()) {
-    api
-      .me()
-      .then(() => router.replace("/dashboard"))
-      .catch(() => api.clearToken());
+    api.me().catch(() => api.clearToken());
   }
 });
 
