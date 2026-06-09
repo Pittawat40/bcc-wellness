@@ -64,6 +64,9 @@
         >
           <span class="cal-date">{{ cell.day }}</span>
           <div class="cal-events">
+            <span v-if="cell.appointments.length" class="cal-event-dot-count">{{
+              cell.appointments.length
+            }}</span>
             <div
               v-for="a in cell.appointments.slice(0, 2)"
               :key="a.id"
@@ -654,12 +657,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 .cal-cell[dragover],
 .week-col[dragover] {
-  background-color: #fffbeb !important; /* เปลี่ยนไฮไลท์สีทองวอร์มๆ ตอนพร้อม Drop */
+  background-color: #fffbeb !important;
   outline: 2px dashed #d97706;
   outline-offset: -2px;
 }
 
-/* (สไตล์เดิมคงอยู่เหมือนเดิมทุกประการ...) */
 .header-controls {
   display: flex;
   align-items: center;
@@ -1267,6 +1269,9 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .modal-leave-to {
   opacity: 0;
 }
+.cal-event-dot-count {
+  display: none;
+}
 @media (max-width: 768px) {
   .header-controls {
     flex-direction: column;
@@ -1289,6 +1294,23 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
   .period-label {
     min-width: unset;
+  }
+  .cal-event {
+    display: none;
+  }
+  .cal-event-dot-count {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #065f46;
+    background: #d1fae5;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 @media (max-width: 640px) {
