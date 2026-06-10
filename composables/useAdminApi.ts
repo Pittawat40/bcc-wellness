@@ -3,6 +3,10 @@ export function useAdminApi() {
   const config = useRuntimeConfig();
   const base = config.public.apiBase as string;
 
+  // ป้องกัน refresh ซ้อน กรณีมีหลาย request พร้อมกัน
+  let isRefreshing = false;
+  let refreshQueue: Array<(token: string | null) => void> = [];
+
   function getToken() {
     if (process.client) return localStorage.getItem("ivf_token") || "";
     return "";
@@ -13,9 +17,28 @@ export function useAdminApi() {
     return "";
   }
 
-  async function tryRefresh(): Promise<boolean> {
+  function clearAllTokens() {
+    localStorage.removeItem("ivf_token");
+    localStorage.removeItem("ivf_refresh_token");
+  }
+
+  function redirectToLogin() {
+    clearAllTokens();
+    window.location.href = "/admin";
+  }
+
+  async function tryRefresh(): Promise<string | null> {
+    // ถ้ากำลัง refresh อยู่แล้ว ให้รอใน queue
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        refreshQueue.push(resolve);
+      });
+    }
+
     const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
+    if (!refreshToken) return null;
+
+    isRefreshing = true;
 
     try {
       const r = await fetch(`${base}/auth/refresh`, {
@@ -25,17 +48,31 @@ export function useAdminApi() {
       });
 
       if (!r.ok) {
-        localStorage.removeItem("ivf_token");
-        localStorage.removeItem("ivf_refresh_token");
-        window.location.href = "/admin";
-        return false;
+        // refresh ไม่ได้จริงๆ — flush queue ด้วย null
+        refreshQueue.forEach((resolve) => resolve(null));
+        refreshQueue = [];
+        return null;
       }
 
       const data = await r.json();
       localStorage.setItem("ivf_token", data.accessToken);
-      return true;
+
+      // รองรับ token rotation — บันทึก refreshToken ใหม่ถ้า BE ส่งมา
+      if (data.refreshToken) {
+        localStorage.setItem("ivf_refresh_token", data.refreshToken);
+      }
+
+      // flush queue ด้วย token ใหม่
+      refreshQueue.forEach((resolve) => resolve(data.accessToken));
+      refreshQueue = [];
+
+      return data.accessToken;
     } catch {
-      return false;
+      refreshQueue.forEach((resolve) => resolve(null));
+      refreshQueue = [];
+      return null;
+    } finally {
+      isRefreshing = false;
     }
   }
 
@@ -64,18 +101,23 @@ export function useAdminApi() {
     });
 
     if (r.status === 401 || r.status === 403) {
-      const refreshed = await tryRefresh();
-      if (refreshed) {
-        const newToken = getToken();
-        r = await fetch(`${base}${path}`, {
-          method,
-          headers: {
-            ...headers,
-            Authorization: `Bearer ${newToken}`,
-          },
-          body: bodyInit,
-        });
+      const newToken = await tryRefresh();
+
+      if (!newToken) {
+        // refresh ไม่สำเร็จจริงๆ → redirect ที่นี่เท่านั้น
+        redirectToLogin();
+        throw new Error("Session expired");
       }
+
+      // retry request ด้วย token ใหม่
+      r = await fetch(`${base}${path}`, {
+        method,
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${newToken}`,
+        },
+        body: bodyInit,
+      });
     }
 
     const data = await r.json().catch(() => ({}));
@@ -99,7 +141,6 @@ export function useAdminApi() {
     put: (path: string, body: object | FormData) => request("PUT", path, body),
     del: (path: string) => request("DELETE", path),
 
-    // auth helpers
     login: (username: string, password: string) =>
       request("POST", "/auth/login", { username, password }),
     me: () => request("GET", "/auth/me"),
@@ -109,7 +150,6 @@ export function useAdminApi() {
         newPassword,
       }),
 
-    // token helpers
     saveToken: (accessToken: string, refreshToken: string) => {
       localStorage.setItem("ivf_token", accessToken);
       localStorage.setItem("ivf_refresh_token", refreshToken);
@@ -123,8 +163,7 @@ export function useAdminApi() {
           body: JSON.stringify({ refreshToken }),
         }).catch(() => {});
       }
-      localStorage.removeItem("ivf_token");
-      localStorage.removeItem("ivf_refresh_token");
+      clearAllTokens();
     },
     isLoggedIn: () => !!getToken(),
 
@@ -150,11 +189,11 @@ export function useAdminApi() {
     getReviews: (params: Record<string, string | number | undefined> = {}) =>
       request("GET", `/reviews/admin/all${buildQuery(params)}`),
 
-    // ── doctors (now returns { doctors, total })
+    // ── doctors
     getDoctors: (params: Record<string, string | number | undefined> = {}) =>
       request("GET", `/doctors/admin/all${buildQuery(params)}`),
 
-    // ── faqs (now returns { faqs, total })
+    // ── faqs
     getFaqs: (params: Record<string, string | number | undefined> = {}) =>
       request("GET", `/faqs/admin/all${buildQuery(params)}`),
   };
